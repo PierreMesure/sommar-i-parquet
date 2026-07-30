@@ -42,6 +42,11 @@ The default output is `data/episodes.parquet`. For a quick development run:
 uv run python run.py --max-pages 1 --output data/sample.parquet
 ```
 
+By default, the parser removes trailers, podcast promotions, host-announcement
+shows, anniversary and recap programmes, Q&As, alternate-language copies,
+multi-guest specials, records without downloadable audio, and audio shorter
+than 15 minutes. Use `--include-specials` to inspect the unfiltered SR archive.
+
 The MVP columns are:
 
 - `sr_episode_id`

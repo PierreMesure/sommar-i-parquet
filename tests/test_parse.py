@@ -1,4 +1,4 @@
-from src.sr.parse import parse_episode
+from src.sr.parse import exclusion_reason, parse_episode, parse_episodes
 
 
 def test_parse_episode() -> None:
@@ -42,4 +42,131 @@ def test_parse_iso_date_and_missing_audio() -> None:
     assert parsed["program_type"] == "Vinter"
     assert parsed["mp3_url"] is None
     assert parsed["length_minutes"] is None
+    assert exclusion_reason(parsed) == "missing_audio"
 
+
+def test_september_archive_episode_is_sommar() -> None:
+    raw = {
+        "id": 425083,
+        "title": "Marie Selander 1974",
+        "description": "Sångerska, kompositör och sångpedagog",
+        "url": "https://example.test/episode",
+        "publishdateutc": "1974-09-03T12:00:00Z",
+        "downloadpodfile": {
+            "duration": 1549,
+            "url": "https://example.test/marie.mp3",
+        },
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["date"] == "1974-09-03"
+    assert parsed["program_type"] == "Sommar"
+    assert exclusion_reason(parsed) is None
+
+
+def test_archive_reissue_recovers_original_date_and_speaker() -> None:
+    raw = {
+        "id": 1619205,
+        "title": "Sommar i P1 med Sven Wollter",
+        "description": "Sommar i P1 med Sven Wollter från den 8 juli 1981",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2020-11-13T15:00:00Z",
+        "downloadpodfile": {
+            "duration": 2219,
+            "url": "https://example.test/wollter.mp3",
+        },
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["speaker"] == "Sven Wollter"
+    assert parsed["date"] == "1981-07-08"
+    assert parsed["year"] == 1981
+    assert parsed["program_type"] == "Sommar"
+
+
+def test_winter_date_wins_over_previous_sommar_host_description() -> None:
+    raw = {
+        "id": 3,
+        "title": "Example Speaker - Vinter 2018",
+        "description": "Konstnär. Sommarvärd 2017.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2018-12-27T12:00:00Z",
+        "downloadpodfile": {
+            "duration": 3600,
+            "url": "https://example.test/winter.mp3",
+        },
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["speaker"] == "Example Speaker"
+    assert parsed["program_type"] == "Vinter"
+
+
+def test_rebroadcast_title_is_normalized_but_kept() -> None:
+    raw = {
+        "id": 4,
+        "title": "Henrik Dorsin (Repris från 2012)",
+        "description": "Skådespelare och komiker.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2017-08-11T12:00:00Z",
+        "downloadpodfile": {
+            "duration": 5102,
+            "url": "https://example.test/rebroadcast.mp3",
+        },
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["speaker"] == "Henrik Dorsin"
+    assert exclusion_reason(parsed) is None
+
+
+def test_english_version_is_filtered() -> None:
+    raw = {
+        "id": 5,
+        "title": 'Felix "PewDiePie" Kjellberg (in English)',
+        "description": "English edition.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2014-08-09T12:00:00Z",
+        "downloadpodfile": {
+            "duration": 3600,
+            "url": "https://example.test/english.mp3",
+        },
+    }
+
+    parsed = parse_episode(raw)
+
+    assert exclusion_reason(parsed) == "alternate_language"
+
+
+def test_specials_and_short_items_are_filtered() -> None:
+    raw = [
+        {
+            "id": 1,
+            "title": "TRAILER: Sommar i P1",
+            "description": "Trailer",
+            "url": "https://example.test/trailer",
+            "publishdateutc": "2020-06-11T12:00:00Z",
+            "downloadpodfile": {
+                "duration": 42,
+                "url": "https://example.test/trailer.mp3",
+            },
+        },
+        {
+            "id": 2,
+            "title": "Årets Sommarvärdar presenteras",
+            "description": "Presskonferens",
+            "url": "https://example.test/announcement",
+            "publishdateutc": "2013-06-01T12:00:00Z",
+            "downloadpodfile": {
+                "duration": 3600,
+                "url": "https://example.test/announcement.mp3",
+            },
+        },
+    ]
+
+    assert parse_episodes(raw) == []
+    assert len(parse_episodes(raw, include_specials=True)) == 2

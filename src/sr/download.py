@@ -54,7 +54,7 @@ def download_episodes(
 
             page_episodes = payload.get("episodes", [])
             if not isinstance(page_episodes, list):
-                raise ValueError("SR response field 'episodes' is not a list")
+                raise TypeError("SR response field 'episodes' is not a list")
             episodes.extend(page_episodes)
 
             pagination = payload.get("pagination", {})
@@ -66,4 +66,3 @@ def download_episodes(
             page += 1
 
     return episodes
-
