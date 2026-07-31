@@ -42,6 +42,12 @@ The default output is `data/episodes.parquet`. For a quick development run:
 uv run python run.py --max-pages 1 --output data/sample.parquet
 ```
 
+The same run also writes one row per song play to `data/music.parquet`, using
+SR's official episode-playlist API. Playlist responses are cached under
+`data/cache/music`, so subsequent runs only fetch new episodes. Use
+`--skip-music` to build only the episode table, or `--max-music-episodes 2` for
+a small music development run.
+
 By default, the parser removes trailers, podcast promotions, host-announcement
 shows, anniversary and recap programmes, Q&As, alternate-language copies,
 multi-guest specials, records without downloadable audio, and audio shorter
@@ -50,14 +56,31 @@ than 15 minutes. Use `--include-specials` to inspect the unfiltered SR archive.
 The MVP columns are:
 
 - `sr_episode_id`
+- `sr_audio_id`
+- `source_title`
 - `speaker`
 - `date`
 - `year`
 - `program_type` (`Sommar`, `Vinter`, or null when the date is inconclusive)
 - `episode_url`
 - `mp3_url`
-- `length_minutes`
+- `length_seconds`
+- `audio_file_size_bytes`
+- `image_url`
+- `image_credit`
 - `short_summary`
+
+The music table contains:
+
+- `sr_episode_id`
+- `track_number`
+- `title`
+- `artist`
+- `composer`
+- `lyricist`
+- `album`
+- `record_label`
+- `is_theme_song`
 
 Run the tests with:
 

@@ -6,9 +6,9 @@ import argparse
 import logging
 from pathlib import Path
 
-from src.sr.download import download_episodes
-from src.sr.parse import parse_episodes
-from src.utils.write import write_parquet
+from src.sr.download import download_episodes, download_music_playlists
+from src.sr.parse import parse_episodes, parse_music_playlists
+from src.utils.write import MUSIC_SCHEMA, write_parquet
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,6 +38,35 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Keep trailers, announcements, short items, and other non-host episodes.",
     )
+    parser.add_argument(
+        "--music-output",
+        type=Path,
+        default=Path("data/music.parquet"),
+        help="Output music Parquet file (default: data/music.parquet)",
+    )
+    parser.add_argument(
+        "--music-from-year",
+        type=int,
+        default=2011,
+        help="Earliest year to query for music metadata (default: 2011)",
+    )
+    parser.add_argument(
+        "--music-workers",
+        type=int,
+        default=4,
+        help="Concurrent SR music requests (default: 4)",
+    )
+    parser.add_argument(
+        "--max-music-episodes",
+        type=int,
+        default=None,
+        help="Only fetch this many music playlists; useful for development.",
+    )
+    parser.add_argument(
+        "--skip-music",
+        action="store_true",
+        help="Only build the episode table.",
+    )
     return parser.parse_args()
 
 
@@ -55,6 +84,26 @@ def main() -> None:
     )
     output = write_parquet(episodes, args.output)
     logging.info("Wrote %d episodes to %s", len(episodes), output)
+
+    if not args.skip_music:
+        music_episode_ids = {
+            episode["sr_episode_id"]
+            for episode in episodes
+            if episode["year"] >= args.music_from_year
+        }
+        raw_playlists = download_music_playlists(
+            raw_episodes,
+            episode_ids=music_episode_ids,
+            max_workers=args.music_workers,
+            max_episodes=args.max_music_episodes,
+        )
+        music = parse_music_playlists(raw_playlists)
+        music_output = write_parquet(
+            music,
+            args.music_output,
+            schema=MUSIC_SCHEMA,
+        )
+        logging.info("Wrote %d song plays to %s", len(music), music_output)
 
 
 if __name__ == "__main__":

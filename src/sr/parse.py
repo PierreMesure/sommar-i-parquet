@@ -148,17 +148,18 @@ def parse_episode(episode: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "sr_episode_id": int(episode["id"]),
+        "sr_audio_id": audio.get("id"),
+        "source_title": title,
         "speaker": _speaker_from_title(title, published.year),
         "date": published.date().isoformat(),
         "year": published.year,
         "program_type": _program_type(published.month, title, summary),
         "episode_url": episode.get("url"),
         "mp3_url": audio.get("url"),
-        "length_minutes": (
-            round(float(duration_seconds) / 60, 2)
-            if duration_seconds is not None
-            else None
-        ),
+        "length_seconds": int(duration_seconds) if duration_seconds is not None else None,
+        "audio_file_size_bytes": audio.get("filesizeinbytes"),
+        "image_url": episode.get("imageurltemplate") or episode.get("imageurl"),
+        "image_credit": episode.get("photographer"),
         "short_summary": episode.get("description"),
     }
 
@@ -170,10 +171,10 @@ def exclusion_reason(episode: dict[str, Any]) -> str | None:
         if pattern.search(title):
             return reason
 
-    duration = episode["length_minutes"]
+    duration = episode["length_seconds"]
     if duration is None or episode["mp3_url"] is None:
         return "missing_audio"
-    if duration < MINIMUM_DURATION_MINUTES:
+    if duration < MINIMUM_DURATION_MINUTES * 60:
         return "too_short"
     if episode["program_type"] is None:
         return "outside_season"
@@ -201,3 +202,69 @@ def parse_episodes(
                 ", ".join(f"{reason}={count}" for reason, count in sorted(reasons.items())),
             )
     return sorted(parsed, key=lambda episode: (episode["date"], episode["sr_episode_id"]))
+
+
+def _music_text(value: str | None) -> str:
+    return " ".join((value or "").casefold().split())
+
+
+def _is_theme_song(title: str) -> bool:
+    """Recognize SR's Sommar and Vinter theme-title variants."""
+    tokens = [
+        token
+        for token in re.findall(r"[^\W_]+", title.casefold())
+        if token != "signatur"
+    ]
+    return (
+        len(tokens) >= 2 and set(tokens) == {"sommar"}
+    ) or tokens == ["vintergatan"]
+
+
+def _music_metadata_score(song: dict[str, Any]) -> int:
+    return sum(
+        bool((song.get(field) or "").strip())
+        for field in ("title", "artist", "composer", "lyricist", "albumname", "recordlabel")
+    )
+
+
+def parse_music_playlists(
+    playlists: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Normalize official SR episode playlists into one row per song play."""
+    rows: list[dict[str, Any]] = []
+    for playlist in playlists:
+        episode_id = int(playlist["sr_episode_id"])
+
+        def song_start(song: dict[str, Any]) -> datetime:
+            value = song.get("starttimeutc")
+            return _parse_sr_datetime(value) if value else datetime.max.replace(tzinfo=UTC)
+
+        unique_songs: dict[tuple[str, str, str | None, str | None], dict[str, Any]] = {}
+        for song in playlist.get("songs", []):
+            key = (
+                _music_text(song.get("title")),
+                _music_text(song.get("artist")),
+                song.get("starttimeutc"),
+                song.get("stoptimeutc"),
+            )
+            existing = unique_songs.get(key)
+            if existing is None or _music_metadata_score(song) > _music_metadata_score(existing):
+                unique_songs[key] = song
+
+        songs = sorted(unique_songs.values(), key=song_start)
+        for track_number, song in enumerate(songs, start=1):
+            title = (song.get("title") or "").strip()
+            rows.append(
+                {
+                    "sr_episode_id": episode_id,
+                    "track_number": track_number,
+                    "title": title or None,
+                    "artist": (song.get("artist") or "").strip() or None,
+                    "composer": (song.get("composer") or "").strip() or None,
+                    "lyricist": (song.get("lyricist") or "").strip() or None,
+                    "album": (song.get("albumname") or "").strip() or None,
+                    "record_label": (song.get("recordlabel") or "").strip() or None,
+                    "is_theme_song": _is_theme_song(title),
+                }
+            )
+    return sorted(rows, key=lambda row: (row["sr_episode_id"], row["track_number"]))
