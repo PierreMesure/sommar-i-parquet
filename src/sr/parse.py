@@ -70,6 +70,8 @@ SPECIAL_TITLE_PATTERNS = (
         ),
     ),
 )
+IJUSTWANTTOBECOOL_MEMBERS = ("Victor Beer", "Emil Beer", "Joel Adolphson")
+UNSPLIT_SPEAKER_NAMES = {"Niklas Natt och Dag"}
 
 
 def _parse_sr_datetime(value: str) -> datetime:
@@ -210,6 +212,52 @@ def parse_episodes(
                 ", ".join(f"{reason}={count}" for reason, count in sorted(reasons.items())),
             )
     return sorted(parsed, key=lambda episode: (episode["date"], episode["sr_episode_id"]))
+
+
+def _split_speakers(credited_name: str) -> list[str]:
+    """Split explicitly co-credited people while preserving known name exceptions."""
+    if credited_name.startswith("IJustWantToBeCool"):
+        return list(IJUSTWANTTOBECOOL_MEMBERS)
+    if credited_name in UNSPLIT_SPEAKER_NAMES or " och " not in credited_name:
+        return [credited_name]
+
+    first, second = credited_name.split(" och ", maxsplit=1)
+    first_parts = first.split()
+    second_parts = second.split()
+    # SR omits the shared surname in labels such as "Jenny och Susanna Kallur".
+    if len(first_parts) == 1 and len(second_parts) >= 2:
+        first = f"{first} {second_parts[-1]}"
+    return [first, second]
+
+
+def parse_speakers(episodes: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Create one speaker-appearance record per credited person and episode."""
+    speakers: list[dict[str, Any]] = []
+    for episode in episodes:
+        names = _split_speakers(str(episode["speaker"]))
+        for speaker_index, speaker in enumerate(names, start=1):
+            speakers.append(
+                {
+                    "sr_episode_id": episode["sr_episode_id"],
+                    "speaker_index": speaker_index,
+                    "speaker_appearance_id": f"{episode['sr_episode_id']}:{speaker_index}",
+                    "speaker": speaker,
+                    "wikidata_id": None,
+                }
+            )
+    return speakers
+
+
+def episode_metadata(episodes: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove participant-only fields from the canonical episode records."""
+    return [
+        {
+            key: value
+            for key, value in episode.items()
+            if key not in {"speaker", "wikidata_id"}
+        }
+        for episode in episodes
+    ]
 
 
 def _music_text(value: str | None) -> str:

@@ -1,4 +1,10 @@
-from src.sr.parse import _speaker_from_title, exclusion_reason, parse_episode, parse_episodes
+from src.sr.parse import (
+    _speaker_from_title,
+    exclusion_reason,
+    parse_episode,
+    parse_episodes,
+    parse_speakers,
+)
 
 
 def test_winter_subtitle_is_not_part_of_the_speaker_name() -> None:
@@ -60,6 +66,28 @@ def test_parse_iso_date_and_missing_audio() -> None:
     assert parsed["mp3_url"] is None
     assert parsed["length_seconds"] is None
     assert exclusion_reason(parsed) == "missing_audio"
+
+
+def test_speaker_rows_split_co_credited_people_and_known_exceptions() -> None:
+    speakers = parse_speakers(
+        [
+            {"sr_episode_id": 1, "speaker": "Jenny och Susanna Kallur"},
+            {"sr_episode_id": 2, "speaker": "Niklas Natt och Dag"},
+            {
+                "sr_episode_id": 3,
+                "speaker": "IJustWantToBeCool (Victor Beer, Emil Beer, Joel Adolphson)",
+            },
+        ]
+    )
+
+    assert speakers == [
+        {"sr_episode_id": 1, "speaker_index": 1, "speaker_appearance_id": "1:1", "speaker": "Jenny Kallur", "wikidata_id": None},
+        {"sr_episode_id": 1, "speaker_index": 2, "speaker_appearance_id": "1:2", "speaker": "Susanna Kallur", "wikidata_id": None},
+        {"sr_episode_id": 2, "speaker_index": 1, "speaker_appearance_id": "2:1", "speaker": "Niklas Natt och Dag", "wikidata_id": None},
+        {"sr_episode_id": 3, "speaker_index": 1, "speaker_appearance_id": "3:1", "speaker": "Victor Beer", "wikidata_id": None},
+        {"sr_episode_id": 3, "speaker_index": 2, "speaker_appearance_id": "3:2", "speaker": "Emil Beer", "wikidata_id": None},
+        {"sr_episode_id": 3, "speaker_index": 3, "speaker_appearance_id": "3:3", "speaker": "Joel Adolphson", "wikidata_id": None},
+    ]
 
 
 def test_september_archive_episode_is_sommar() -> None:

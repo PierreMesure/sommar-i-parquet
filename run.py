@@ -7,10 +7,20 @@ import logging
 from pathlib import Path
 
 from src.sr.download import download_episodes, download_music_playlists
-from src.sr.parse import parse_episodes, parse_music_playlists
-from src.utils.write import MUSIC_SCHEMA, write_parquet
+from src.sr.parse import (
+    episode_metadata,
+    parse_episodes,
+    parse_music_playlists,
+    parse_speakers,
+)
+from src.utils.write import (
+    MUSIC_SCHEMA,
+    SPEAKER_APPEARANCE_SCHEMA,
+    SPEAKER_SCHEMA,
+    write_parquet,
+)
 from src.wd.download import download_season_participants
-from src.wd.parse import enrich_episodes_with_wikidata
+from src.wd.parse import enrich_speakers_with_wikidata
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,6 +32,18 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/episodes.parquet"),
         help="Output Parquet file (default: data/episodes.parquet)",
+    )
+    parser.add_argument(
+        "--speakers-output",
+        type=Path,
+        default=Path("data/speakers.parquet"),
+        help="Speaker-appearance Parquet output (default: data/speakers.parquet)",
+    )
+    parser.add_argument(
+        "--speaker-appearances-output",
+        type=Path,
+        default=Path("data/speaker_appearances.parquet"),
+        help="Enriched browseable speaker-appearance output",
     )
     parser.add_argument(
         "--page-size",
@@ -74,6 +96,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Only build SR-derived data, without Wikidata enrichment.",
     )
+    parser.add_argument(
+        "--refresh-wikidata",
+        action="store_true",
+        help="Refresh the cached Wikidata participant data.",
+    )
     return parser.parse_args()
 
 
@@ -90,14 +117,40 @@ def main() -> None:
         raw_episodes,
         include_specials=args.include_specials,
     )
+    speakers = parse_speakers(episodes)
     if not args.skip_wikidata:
-        season_participants = download_season_participants()
-        episodes = enrich_episodes_with_wikidata(
-            episodes,
+        season_participants = download_season_participants(
+            force_refresh=args.refresh_wikidata,
+        )
+        speakers = enrich_speakers_with_wikidata(
+            speakers,
+            episodes=episodes,
             season_participants=season_participants,
         )
-    output = write_parquet(episodes, args.output)
+    episode_rows = episode_metadata(episodes)
+    output = write_parquet(episode_rows, args.output)
     logging.info("Wrote %d episodes to %s", len(episodes), output)
+    speakers_output = write_parquet(
+        speakers,
+        args.speakers_output,
+        schema=SPEAKER_SCHEMA,
+    )
+    logging.info("Wrote %d speaker appearances to %s", len(speakers), speakers_output)
+
+    episodes_by_id = {episode["sr_episode_id"]: episode for episode in episode_rows}
+    speaker_appearances = [
+        {**episodes_by_id[speaker["sr_episode_id"]], **speaker} for speaker in speakers
+    ]
+    appearances_output = write_parquet(
+        speaker_appearances,
+        args.speaker_appearances_output,
+        schema=SPEAKER_APPEARANCE_SCHEMA,
+    )
+    logging.info(
+        "Wrote %d enriched speaker appearances to %s",
+        len(speaker_appearances),
+        appearances_output,
+    )
 
     if not args.skip_music:
         music_episode_ids = {

@@ -36,7 +36,9 @@ uv sync
 uv run python run.py
 ```
 
-The default output is `data/episodes.parquet`. For a quick development run:
+The default output is `data/episodes.parquet`, with speaker appearances in
+`data/speakers.parquet` and a join for browsing in
+`data/speaker_appearances.parquet`. For a quick development run:
 
 ```shell
 uv run python run.py --max-pages 1 --output data/sample.parquet
@@ -53,12 +55,11 @@ shows, anniversary and recap programmes, Q&As, alternate-language copies,
 multi-guest specials, records without downloadable audio, and audio shorter
 than 15 minutes. Use `--include-specials` to inspect the unfiltered SR archive.
 
-The MVP columns are:
+The episode table contains episode-only columns:
 
 - `sr_episode_id`
 - `sr_audio_id`
 - `source_title`
-- `speaker`
 - `date`
 - `year`
 - `program_type` (`Sommar`, `Vinter`, or null when the date is inconclusive)
@@ -69,13 +70,28 @@ The MVP columns are:
 - `image_url`
 - `image_credit`
 - `short_summary`
+
+The speaker table contains one row per credited speaker, with:
+
+- `sr_episode_id`
+- `speaker_index`
+- `speaker_appearance_id` (`<sr_episode_id>:<speaker_index>`)
+- `speaker`
 - `wikidata_id`
 
-Wikidata enrichment joins Wikidata's dated season-participant statements to the
-SR broadcast date only when each source has exactly one participant that day.
-Empty `wikidata_id` values mean the script deliberately did not guess.
-Responses are cached under `data/cache/wikidata`. Pass
-`--skip-wikidata` to omit this optional enrichment.
+`speaker_appearances.parquet` repeats the episode columns alongside these
+speaker fields for convenient browsing. It is intentionally redundant; use the
+episode and speaker tables as the canonical data.
+
+Wikidata enrichment is stored on speaker appearances, not episodes. A unique
+Wikidata participant on a broadcast date is accepted as a conservative
+date-only match; when several participants share a date, the Wikidata label
+must match the SR speaker name. Empty `wikidata_id` values mean the script
+deliberately did not guess.
+
+Responses are cached under `data/cache/wikidata`. Pass `--refresh-wikidata`
+to fetch the participant data again, or `--skip-wikidata` to omit this
+optional enrichment.
 
 The music table contains:
 

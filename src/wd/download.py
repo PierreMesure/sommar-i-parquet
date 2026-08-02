@@ -21,15 +21,15 @@ USER_AGENT = (
 RATE_LIMIT_RETRY_SECONDS = 65
 LOGGER = logging.getLogger(__name__)
 SEASON_PARTICIPANTS_QUERY = """
-SELECT (GROUP_CONCAT(DISTINCT CONCAT(
-  SUBSTR(STR(?date), 1, 10), "=",
-  STRAFTER(STR(?speaker), "entity/")
-); separator="|") AS ?date_qids)
+SELECT ?speaker ?speakerLabel ?date
 WHERE {
   ?season wdt:P179 wd:Q7560435;
           p:P710 ?statement.
   ?statement ps:P710 ?speaker;
              pq:P585 ?date.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "sv,en".
+  }
 }
 """
 
@@ -64,11 +64,12 @@ def _retry_after_seconds(response: httpx.Response) -> int:
 def download_season_participants(
     *,
     cache_dir: str | Path = "data/cache/wikidata",
+    force_refresh: bool = False,
 ) -> list[dict[str, Any]]:
     """Fetch qualified participant/date records from Wikidata season items."""
     path = Path(cache_dir) / "season_participants.json"
     cached = _load_json(path)
-    if cached is not None:
+    if cached is not None and not force_refresh:
         return cached
 
     try:
@@ -87,20 +88,7 @@ def download_season_participants(
                 )
                 if response.status_code != httpx.codes.TOO_MANY_REQUESTS:
                     response.raise_for_status()
-                    value = response.json()["results"]["bindings"][0]["date_qids"][
-                        "value"
-                    ]
-                    bindings = [
-                        {
-                            "speaker": {
-                                "value": "http://www.wikidata.org/entity/" + qid
-                            },
-                            "date": {"value": date},
-                        }
-                        for pair in value.split("|")
-                        for date, qid in [pair.split("=", maxsplit=1)]
-                        if qid
-                    ]
+                    bindings = response.json()["results"]["bindings"]
                     break
                 if attempt == 0:
                     retry_seconds = _retry_after_seconds(response)

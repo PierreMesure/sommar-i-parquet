@@ -14,7 +14,6 @@ EPISODE_SCHEMA = pa.schema(
         ("sr_episode_id", pa.int64()),
         ("sr_audio_id", pa.int64()),
         ("source_title", pa.string()),
-        ("speaker", pa.string()),
         ("date", pa.string()),
         ("year", pa.int32()),
         ("program_type", pa.string()),
@@ -25,6 +24,25 @@ EPISODE_SCHEMA = pa.schema(
         ("image_url", pa.string()),
         ("image_credit", pa.string()),
         ("short_summary", pa.string()),
+    ]
+)
+
+SPEAKER_SCHEMA = pa.schema(
+    [
+        ("sr_episode_id", pa.int64()),
+        ("speaker_index", pa.int32()),
+        ("speaker_appearance_id", pa.string()),
+        ("speaker", pa.string()),
+        ("wikidata_id", pa.string()),
+    ]
+)
+
+SPEAKER_APPEARANCE_SCHEMA = pa.schema(
+    [
+        *EPISODE_SCHEMA,
+        ("speaker_index", pa.int32()),
+        ("speaker_appearance_id", pa.string()),
+        ("speaker", pa.string()),
         ("wikidata_id", pa.string()),
     ]
 )

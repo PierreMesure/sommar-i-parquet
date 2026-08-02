@@ -3,4 +3,4 @@ __pycache__/
 .venv/
 *.py[cod]
 data/
-
+.env
