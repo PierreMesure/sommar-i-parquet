@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 STOCKHOLM = ZoneInfo("Europe/Stockholm")
 MINIMUM_DURATION_MINUTES = 15
 DOTNET_DATE = re.compile(r"^/Date\((-?\d+)(?:[+-]\d{4})?\)/$")
-TRAILING_YEAR = re.compile(r"\s+(\d{4})$")
+TRAILING_YEAR = re.compile(r"\s*-?\s*(\d{4})$")
 ORIGINAL_DATE = re.compile(
     r"\bfrån den (?P<day>\d{1,2}) "
     r"(?P<month>januari|februari|mars|april|maj|juni|juli|augusti|"
@@ -88,18 +88,19 @@ def _speaker_from_title(title: str, year: int) -> str:
         title,
         flags=re.IGNORECASE,
     )
+
+    match = TRAILING_YEAR.search(title)
+    if match and int(match.group(1)) == year:
+        title = title[: match.start()].strip()
+
     title = re.sub(
         r"\s*-\s*(?:På Vintergatan|Vinter(?:\s+\d{4})?)\s*$",
         "",
         title,
         flags=re.IGNORECASE,
     )
-    title = title.rstrip(" -")
-
-    match = TRAILING_YEAR.search(title)
-    if match and int(match.group(1)) == year:
-        return title[: match.start()].strip()
-    return title.strip()
+    title = re.sub(r"\s+Sommarprat\s*$", "", title, flags=re.IGNORECASE)
+    return title.rstrip(" -").strip()
 
 
 def _program_type(month: int, title: str, summary: str) -> str | None:

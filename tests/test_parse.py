@@ -1,4 +1,16 @@
-from src.sr.parse import exclusion_reason, parse_episode, parse_episodes
+from src.sr.parse import _speaker_from_title, exclusion_reason, parse_episode, parse_episodes
+
+
+def test_winter_subtitle_is_not_part_of_the_speaker_name() -> None:
+    assert _speaker_from_title("Tage Danielsson - På Vintergatan 1971", 1971) == "Tage Danielsson"
+
+
+def test_sommarprat_suffix_is_not_part_of_the_speaker_name() -> None:
+    assert _speaker_from_title("Bo Landin Sommarprat\u00a01977", 1977) == "Bo Landin"
+
+
+def test_hyphen_before_year_is_not_part_of_the_speaker_name() -> None:
+    assert _speaker_from_title("Monica Borrfors -1988", 1988) == "Monica Borrfors"
 
 
 def test_parse_episode() -> None:

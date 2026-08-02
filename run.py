@@ -9,6 +9,8 @@ from pathlib import Path
 from src.sr.download import download_episodes, download_music_playlists
 from src.sr.parse import parse_episodes, parse_music_playlists
 from src.utils.write import MUSIC_SCHEMA, write_parquet
+from src.wd.download import download_season_participants
+from src.wd.parse import enrich_episodes_with_wikidata
 
 
 def parse_args() -> argparse.Namespace:
@@ -67,12 +69,18 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Only build the episode table.",
     )
+    parser.add_argument(
+        "--skip-wikidata",
+        action="store_true",
+        help="Only build SR-derived data, without Wikidata enrichment.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     raw_episodes = download_episodes(
         page_size=args.page_size,
@@ -82,6 +90,12 @@ def main() -> None:
         raw_episodes,
         include_specials=args.include_specials,
     )
+    if not args.skip_wikidata:
+        season_participants = download_season_participants()
+        episodes = enrich_episodes_with_wikidata(
+            episodes,
+            season_participants=season_participants,
+        )
     output = write_parquet(episodes, args.output)
     logging.info("Wrote %d episodes to %s", len(episodes), output)
 

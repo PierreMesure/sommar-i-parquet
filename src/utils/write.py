@@ -25,6 +25,7 @@ EPISODE_SCHEMA = pa.schema(
         ("image_url", pa.string()),
         ("image_credit", pa.string()),
         ("short_summary", pa.string()),
+        ("wikidata_id", pa.string()),
     ]
 )
 

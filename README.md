@@ -69,6 +69,13 @@ The MVP columns are:
 - `image_url`
 - `image_credit`
 - `short_summary`
+- `wikidata_id`
+
+Wikidata enrichment joins Wikidata's dated season-participant statements to the
+SR broadcast date only when each source has exactly one participant that day.
+Empty `wikidata_id` values mean the script deliberately did not guess.
+Responses are cached under `data/cache/wikidata`. Pass
+`--skip-wikidata` to omit this optional enrichment.
 
 The music table contains:
 
