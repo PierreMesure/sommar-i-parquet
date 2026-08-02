@@ -122,6 +122,73 @@ def test_winter_date_wins_over_previous_sommar_host_description() -> None:
     assert parsed["program_type"] == "Vinter"
 
 
+def test_programme_suffix_and_talk_title_are_removed_from_speaker() -> None:
+    raw = {
+        "id": 30,
+        "title": "Olof Wretling – Kvinnorna i mitt liv – Vinterprat",
+        "description": "Komiker.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2019-12-29T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/winter.mp3"},
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["speaker"] == "Olof Wretling"
+
+
+def test_trailing_lifespan_is_removed_from_speaker() -> None:
+    raw = {
+        "id": 33,
+        "title": "Sven-David Sandström 1942 – 2019",
+        "description": "Kompositör.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2019-07-10T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+    }
+
+    assert parse_episode(raw)["speaker"] == "Sven-David Sandström"
+
+
+def test_programme_suffix_without_dash_is_removed_except_ingrid_sommar() -> None:
+    staffan = {
+        "id": 31,
+        "title": "Staffan Olsson Vinter 2010",
+        "description": "",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2010-12-28T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/winter.mp3"},
+    }
+    ingrid = {
+        **staffan,
+        "id": 32,
+        "title": "Ingrid Sommar 2005",
+        "publishdateutc": "2005-07-01T12:00:00Z",
+    }
+
+    assert parse_episode(staffan)["speaker"] == "Staffan Olsson"
+    assert parse_episode(ingrid)["speaker"] == "Ingrid Sommar"
+
+
+def test_season_and_listener_host_suffixes_are_removed() -> None:
+    examples = (
+        ("Martina Haag - Vinter 2013/14", "Martina Haag"),
+        ("Lars Lerin - Vinter 2015 (jan)", "Lars Lerin"),
+        ("Herman Geijer - Lyssnarnas Sommarvärd", "Herman Geijer"),
+        ("Emilia Lind (Lyssnarnas Sommarvärd 2016)", "Emilia Lind"),
+    )
+    for episode_id, (title, speaker) in enumerate(examples, start=40):
+        raw = {
+            "id": episode_id,
+            "title": title,
+            "description": "",
+            "url": "https://example.test/episode",
+            "publishdateutc": "2015-12-28T12:00:00Z",
+            "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+        }
+        assert parse_episode(raw)["speaker"] == speaker
+
+
 def test_rebroadcast_title_is_normalized_but_kept() -> None:
     raw = {
         "id": 4,

@@ -14,6 +14,15 @@ STOCKHOLM = ZoneInfo("Europe/Stockholm")
 MINIMUM_DURATION_MINUTES = 15
 DOTNET_DATE = re.compile(r"^/Date\((-?\d+)(?:[+-]\d{4})?\)/$")
 TRAILING_YEAR = re.compile(r"\s*-?\s*(\d{4})$")
+TRAILING_LIFESPAN = re.compile(r"\s+\d{4}\s*[-–—]\s*\d{4}\s*$")
+PROGRAMME_SUFFIX = re.compile(
+    r"\s*(?:[-–—]\s*|\()?"
+    r"(?:På Vintergatan|(?:Lyssnarnas\s+)?Sommarvärd|"
+    r"Sommar(?:prat| i P1)?|Vinter(?:prat| i P1)?)"
+    r"(?:\s+\d{4}(?:/\d{2})?)?"
+    r"(?:\s*\((?:jan|dec)\))?\)?\s*$",
+    re.IGNORECASE,
+)
 ORIGINAL_DATE = re.compile(
     r"\bfrån den (?P<day>\d{1,2}) "
     r"(?P<month>januari|februari|mars|april|maj|juni|juli|augusti|"
@@ -88,18 +97,16 @@ def _speaker_from_title(title: str, year: int) -> str:
         title,
         flags=re.IGNORECASE,
     )
+    title = TRAILING_LIFESPAN.sub("", title)
 
     match = TRAILING_YEAR.search(title)
     if match and int(match.group(1)) == year:
         title = title[: match.start()].strip()
 
-    title = re.sub(
-        r"\s*-\s*(?:På Vintergatan|Vinter(?:\s+\d{4})?)\s*$",
-        "",
-        title,
-        flags=re.IGNORECASE,
-    )
-    title = re.sub(r"\s+Sommarprat\s*$", "", title, flags=re.IGNORECASE)
+    if title.casefold() != "ingrid sommar" and PROGRAMME_SUFFIX.search(title):
+        title = PROGRAMME_SUFFIX.sub("", title)
+        if re.search(r"\s[-–—]\s", title):
+            title = re.split(r"\s[-–—]\s", title, maxsplit=1)[0]
     return title.rstrip(" -").strip()
 
 
