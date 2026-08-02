@@ -1,0 +1,100 @@
+---
+const title = "Sommar & Vinter i P1";
+const episodesUrl = import.meta.env.DEV
+  ? "/episodes.json"
+  : "https://raw.githubusercontent.com/PierreMesure/sommar-i-parquet/refs/heads/main/data/episodes.json";
+---
+
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="episodes-url" content={episodesUrl} />
+    <meta
+      name="description"
+      content="Bläddra, sök och filtrera i arkivet för Sommar och Vinter i P1."
+    />
+    <title>{title}</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">Sveriges Radios arkiv</p>
+        <h1>{title}</h1>
+        <p class="intro">
+          Hitta ett program att lyssna på — från de tidigaste sändningarna till idag.
+        </p>
+      </header>
+
+      <section class="filters" aria-label="Filtrera program">
+        <label class="search-field" for="search">
+          <span>Sök</span>
+          <input
+            id="search"
+            type="search"
+            placeholder="Namn, titel eller sammanfattning"
+            autocomplete="off"
+          />
+        </label>
+        <label for="program-type">
+          <span>Program</span>
+          <select id="program-type">
+            <option value="">Sommar och Vinter</option>
+            <option value="Sommar">Sommar</option>
+            <option value="Vinter">Vinter</option>
+          </select>
+        </label>
+        <fieldset class="year-range">
+          <legend>År</legend>
+          <div class="year-range-values"><output id="year-from-output"></output><span>–</span><output id="year-to-output"></output></div>
+          <div class="year-range-inputs">
+            <input id="year-from" type="range" aria-label="Från år" />
+            <input id="year-to" type="range" aria-label="Till år" />
+          </div>
+        </fieldset>
+        <label for="sort">
+          <span>Sortera</span>
+          <select id="sort">
+            <option value="newest">Nyast först</option>
+            <option value="oldest">Äldst först</option>
+            <option value="speaker">Värd A–Ö</option>
+          </select>
+        </label>
+        <label class="checkbox-filter" for="returning">
+          <input id="returning" type="checkbox" />
+          <span>Återkommande värdar</span>
+        </label>
+      </section>
+
+      <section class="results" aria-live="polite">
+        <div class="results-heading">
+          <p id="result-count">Laddar program …</p>
+          <button id="reset" class="reset" type="button" hidden>Rensa filter</button>
+        </div>
+        <div id="episode-list" class="episode-list"></div>
+        <p id="empty-state" class="empty-state" hidden>Inga program matchar dina filter.</p>
+      </section>
+    </main>
+    <template id="episode-template">
+      <article class="episode-card">
+        <a class="episode-image-link" data-role="episode-link" target="_blank" rel="noreferrer">
+          <img data-role="image" alt="" loading="lazy" />
+          <span class="image-fallback" aria-hidden="true"></span>
+        </a>
+        <div class="episode-content">
+          <div class="episode-meta">
+            <span data-role="program-type"></span>
+            <span data-role="date"></span>
+            <span data-role="duration"></span>
+          </div>
+          <h2><a data-role="episode-link" target="_blank" rel="noreferrer"><span data-role="speakers"></span></a></h2>
+          <p data-role="summary" class="summary"></p>
+          <a class="listen-link" data-role="episode-link" target="_blank" rel="noreferrer">Till programmet <span aria-hidden="true">→</span></a>
+        </div>
+      </article>
+    </template>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

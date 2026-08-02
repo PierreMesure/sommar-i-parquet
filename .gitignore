@@ -1,6 +1,17 @@
+# Python
 __pycache__/
 .pytest_cache/
 .venv/
 *.py[cod]
-data/
+
+# Data
+data/cache/
+data/*.parquet
+
+# Secrets
 .env
+
+# Frontend
+frontend/node_modules/
+frontend/.astro/
+frontend/dist/

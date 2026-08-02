@@ -17,6 +17,7 @@ from src.utils.write import (
     MUSIC_SCHEMA,
     SPEAKER_APPEARANCE_SCHEMA,
     SPEAKER_SCHEMA,
+    write_frontend_json,
     write_parquet,
 )
 from src.wd.download import download_season_participants
@@ -44,6 +45,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/speaker_appearances.parquet"),
         help="Enriched browseable speaker-appearance output",
+    )
+    parser.add_argument(
+        "--frontend-output",
+        type=Path,
+        default=Path("data/episodes.json"),
+        help="Compact JSON output for the static frontend (default: data/episodes.json)",
     )
     parser.add_argument(
         "--page-size",
@@ -151,6 +158,8 @@ def main() -> None:
         len(speaker_appearances),
         appearances_output,
     )
+    frontend_output = write_frontend_json(episode_rows, speakers, args.frontend_output)
+    logging.info("Wrote %d frontend episodes to %s", len(episodes), frontend_output)
 
     if not args.skip_music:
         music_episode_ids = {

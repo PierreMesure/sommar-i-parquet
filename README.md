@@ -38,7 +38,8 @@ uv run python run.py
 
 The default output is `data/episodes.parquet`, with speaker appearances in
 `data/speakers.parquet` and a join for browsing in
-`data/speaker_appearances.parquet`. For a quick development run:
+`data/speaker_appearances.parquet`. The same run also generates the compact
+frontend dataset at `data/episodes.json`. For a quick development run:
 
 ```shell
 uv run python run.py --max-pages 1 --output data/sample.parquet
@@ -110,3 +111,21 @@ Run the tests with:
 ```shell
 uv run pytest
 ```
+
+## Static frontend
+
+The `frontend/` directory contains a static Astro browser for the archive. Its
+`public/episodes.json` is a symbolic link to the canonical `data/episodes.json`
+written by `run.py`; run the data pipeline before starting the frontend.
+
+```shell
+cd frontend
+npm install
+npm run dev
+```
+
+Create deployable static files with `npm run build`; the result is written to
+`frontend/dist/`.
+
+Development uses the local `/episodes.json` symbolic link. Production builds
+fetch the canonical JSON directly from the repository on GitHub.
