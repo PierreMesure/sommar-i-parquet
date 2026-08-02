@@ -23,3 +23,7 @@ Use the token to submit a batch to QuickStatements from your own bot (please use
 
 The batch will start automatically, as if you had created it in the interface and then clicked "Run in background".
 A JSON object will be returned: {"status":"OK","batch_id":ID_OF_THE_NEW_BATCH} (or an error message in "status").
+
+## Dependency versions
+
+Whether Python or NPM, please avoid adding stale versions of the required dependencies. Check with `uv` or `npm` regularly to make sure we use the latest versions.
