@@ -3,6 +3,8 @@ const title = "Sommar & Vinter i P1";
 const episodesUrl = import.meta.env.DEV
   ? "/episodes.json"
   : "https://raw.githubusercontent.com/PierreMesure/sommar-i-parquet/refs/heads/main/data/episodes.json";
+const base = import.meta.env.BASE_URL;
+const assetBase = base.endsWith("/") ? base : `${base}/`;
 ---
 
 <!doctype html>
@@ -16,7 +18,7 @@ const episodesUrl = import.meta.env.DEV
       content="Bläddra, sök och filtrera i arkivet för Sommar och Vinter i P1."
     />
     <title>{title}</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href={`${assetBase}styles.css`} />
   </head>
   <body>
     <main class="page-shell">
@@ -95,6 +97,6 @@ const episodesUrl = import.meta.env.DEV
         </div>
       </article>
     </template>
-    <script type="module" src="/app.js"></script>
+    <script type="module" src={`${assetBase}app.js`}></script>
   </body>
 </html>

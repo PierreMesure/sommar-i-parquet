@@ -1,0 +1,3 @@
+image: node:24
+command: npm ci && npm run build
+public: dist
