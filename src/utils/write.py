@@ -49,6 +49,21 @@ SPEAKER_APPEARANCE_SCHEMA = pa.schema(
     ]
 )
 
+SPEAKER_METADATA_SCHEMA = pa.schema(
+    [
+        ("wikidata_id", pa.string()),
+        ("wikipedia_url", pa.string()),
+        ("gender", pa.string()),
+        ("gender_id", pa.string()),
+        ("birth_date", pa.string()),
+        ("death_date", pa.string()),
+        ("citizenships", pa.list_(pa.string())),
+        ("citizenship_ids", pa.list_(pa.string())),
+        ("occupations", pa.list_(pa.string())),
+        ("occupation_ids", pa.list_(pa.string())),
+    ]
+)
+
 MUSIC_SCHEMA = pa.schema(
     [
         ("sr_episode_id", pa.int64()),

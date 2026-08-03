@@ -13,8 +13,94 @@ SPEAKER_LABEL_OVERRIDES = {
     # SR presented him anonymously in the episode metadata, while the
     # corresponding Wikidata item uses his full name.
     "Stefan, pappa till Ebba": "Stefan Åkerlund",
+    # Sveriges Radio credits these Hooja members by stage name, whereas their
+    # Wikidata items are correctly labelled with their real names.
+    "Hooja": "Joakim Lithner",
+    "Mårdis": "Markus Mattsby",
+    # She has since changed her name; the SR archive retains her former name.
+    "Johanna Almer": "Johanna Andersson",
 }
 QID_RE = re.compile(r"^Q[1-9][0-9]*$")
+
+
+def _binding_value(binding: dict[str, Any], name: str) -> str | None:
+    value = binding.get(name, {}).get("value")
+    return value if isinstance(value, str) else None
+
+
+def _qid(value: str | None) -> str | None:
+    if not value:
+        return None
+    candidate = value.rsplit("/", 1)[-1]
+    return candidate if QID_RE.fullmatch(candidate) else None
+
+
+def _date(value: str | None, precision: str | None) -> str | None:
+    if not value or not precision:
+        return None
+    normalized = value.lstrip("+").split("T", 1)[0]
+    if precision.isdigit() and int(precision) >= 11:
+        return normalized
+    if precision == "10":
+        return normalized[:7]
+    if precision == "9":
+        return normalized[:4]
+    return None
+
+
+def parse_speaker_metadata(bindings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge ungrouped Wikidata SPARQL rows into one record per speaker."""
+    records: dict[str, dict[str, Any]] = {}
+    for binding in bindings:
+        qid = _qid(_binding_value(binding, "speaker"))
+        if not qid:
+            continue
+        record = records.setdefault(
+            qid,
+            {
+                "wikidata_id": qid,
+                "wikipedia_url": None,
+                "gender": None,
+                "gender_id": None,
+                "birth_date": _date(
+                    _binding_value(binding, "birthDate"),
+                    _binding_value(binding, "birthPrecision"),
+                ),
+                "death_date": _date(
+                    _binding_value(binding, "deathDate"),
+                    _binding_value(binding, "deathPrecision"),
+                ),
+                "citizenships": {},
+                "occupations": {},
+            },
+        )
+        record["wikipedia_url"] = (
+            _binding_value(binding, "svArticle")
+            or record["wikipedia_url"]
+            or _binding_value(binding, "enArticle")
+        )
+        gender_id = _qid(_binding_value(binding, "gender"))
+        if gender_id and record["gender_id"] is None:
+            record["gender_id"] = gender_id
+            record["gender"] = _binding_value(binding, "genderLabel") or gender_id
+        for value_name, label_name, key in (
+            ("citizenship", "citizenshipLabel", "citizenships"),
+            ("occupation", "occupationLabel", "occupations"),
+        ):
+            value_id = _qid(_binding_value(binding, value_name))
+            if value_id:
+                record[key][value_id] = _binding_value(binding, label_name) or value_id
+
+    return [
+        {
+            **{key: value for key, value in record.items() if key not in {"citizenships", "occupations"}},
+            "citizenships": list(record["citizenships"].values()),
+            "citizenship_ids": list(record["citizenships"]),
+            "occupations": list(record["occupations"].values()),
+            "occupation_ids": list(record["occupations"]),
+        }
+        for _, record in sorted(records.items())
+    ]
 
 
 def _normalise_name(value: str) -> str:
@@ -70,13 +156,15 @@ def enrich_speakers_with_wikidata(
         date = episode_dates.get(row.get("sr_episode_id"))
         candidates = participants_by_date.get(date, []) if date else []
         candidate_ids = {qid for qid, _ in candidates}
-        speaker_label = SPEAKER_LABEL_OVERRIDES.get(
-            str(row["speaker"]), str(row["speaker"])
-        )
+        speaker_name = str(row["speaker"])
+        accepted_labels = {
+            _normalise_name(speaker_name),
+            _normalise_name(SPEAKER_LABEL_OVERRIDES.get(speaker_name, speaker_name)),
+        }
         matched_ids = {
             qid
             for qid, label in candidates
-            if label and _normalise_name(label) == _normalise_name(speaker_label)
+            if label and _normalise_name(label) in accepted_labels
         }
         if len(matched_ids) == 1:
             row["wikidata_id"] = next(iter(matched_ids))

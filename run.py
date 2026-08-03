@@ -16,12 +16,13 @@ from src.sr.parse import (
 from src.utils.write import (
     MUSIC_SCHEMA,
     SPEAKER_APPEARANCE_SCHEMA,
+    SPEAKER_METADATA_SCHEMA,
     SPEAKER_SCHEMA,
     write_frontend_json,
     write_parquet,
 )
-from src.wd.download import download_season_participants
-from src.wd.parse import enrich_speakers_with_wikidata
+from src.wd.download import download_season_participants, download_speaker_metadata
+from src.wd.parse import enrich_speakers_with_wikidata, parse_speaker_metadata
 
 
 def parse_args() -> argparse.Namespace:
@@ -51,6 +52,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/episodes.json"),
         help="Compact JSON output for the static frontend (default: data/episodes.json)",
+    )
+    parser.add_argument(
+        "--speaker-metadata-output",
+        type=Path,
+        default=Path("data/speaker_metadata.parquet"),
+        help="Wikidata speaker metadata output (default: data/speaker_metadata.parquet)",
     )
     parser.add_argument(
         "--page-size",
@@ -160,6 +167,22 @@ def main() -> None:
     )
     frontend_output = write_frontend_json(episode_rows, speakers, args.frontend_output)
     logging.info("Wrote %d frontend episodes to %s", len(episodes), frontend_output)
+
+    metadata = (
+        download_speaker_metadata(
+            [speaker["wikidata_id"] for speaker in speakers if speaker["wikidata_id"]],
+            force_refresh=args.refresh_wikidata,
+        )
+        if not args.skip_wikidata
+        else []
+    )
+    speaker_metadata = parse_speaker_metadata(metadata)
+    metadata_output = write_parquet(
+        speaker_metadata,
+        args.speaker_metadata_output,
+        schema=SPEAKER_METADATA_SCHEMA,
+    )
+    logging.info("Wrote %d Wikidata speaker records to %s", len(speaker_metadata), metadata_output)
 
     if not args.skip_music:
         music_episode_ids = {

@@ -1,4 +1,4 @@
-from src.wd.parse import enrich_speakers_with_wikidata
+from src.wd.parse import enrich_speakers_with_wikidata, parse_speaker_metadata
 
 
 def test_season_participant_match_has_priority() -> None:
@@ -102,6 +102,30 @@ def test_speaker_label_override_matches_anonymous_sr_credit() -> None:
     assert result[0]["wikidata_id"] == "Q100"
 
 
+def test_stage_names_match_wikidata_items_labelled_with_real_names() -> None:
+    result = enrich_speakers_with_wikidata(
+        [
+            {"sr_episode_id": 1, "speaker": "Hooja"},
+            {"sr_episode_id": 1, "speaker": "Mårdis"},
+        ],
+        episodes=[{"sr_episode_id": 1, "date": "2023-08-12"}],
+        season_participants=[
+            {
+                "speaker": {"value": "http://www.wikidata.org/entity/Q100"},
+                "speakerLabel": {"value": "Joakim Lithner"},
+                "date": {"value": "2023-08-12T00:00:00Z"},
+            },
+            {
+                "speaker": {"value": "http://www.wikidata.org/entity/Q101"},
+                "speakerLabel": {"value": "Markus Mattsby"},
+                "date": {"value": "2023-08-12T00:00:00Z"},
+            },
+        ],
+    )
+
+    assert [speaker["wikidata_id"] for speaker in result] == ["Q100", "Q101"]
+
+
 def test_non_qid_participant_placeholder_is_ignored() -> None:
     result = enrich_speakers_with_wikidata(
         [{"sr_episode_id": 1, "speaker": "Name variant"}],
@@ -122,3 +146,48 @@ def test_non_qid_participant_placeholder_is_ignored() -> None:
     )
 
     assert result[0]["wikidata_id"] == "Q100"
+
+
+def test_parse_speaker_metadata_prefers_swedish_labels_and_wikipedia() -> None:
+    result = parse_speaker_metadata(
+        [
+            _binding(
+                speaker="http://www.wikidata.org/entity/Q1",
+                svArticle="https://sv.wikipedia.org/wiki/Ada_Lovelace",
+                gender="http://www.wikidata.org/entity/Q2",
+                genderLabel="kvinna",
+                birthDate="1815-12-10T00:00:00Z",
+                birthPrecision="11",
+                deathDate="1852-01-01T00:00:00Z",
+                deathPrecision="9",
+                citizenship="http://www.wikidata.org/entity/Q3",
+                citizenshipLabel="United Kingdom",
+                occupation="http://www.wikidata.org/entity/Q4",
+                occupationLabel="matematiker",
+            ),
+            _binding(
+                speaker="http://www.wikidata.org/entity/Q1",
+                occupation="http://www.wikidata.org/entity/Q6",
+                occupationLabel="programmerare",
+            ),
+        ]
+    )
+
+    assert result == [
+        {
+            "wikidata_id": "Q1",
+            "wikipedia_url": "https://sv.wikipedia.org/wiki/Ada_Lovelace",
+            "gender": "kvinna",
+            "gender_id": "Q2",
+            "birth_date": "1815-12-10",
+            "death_date": "1852",
+            "citizenships": ["United Kingdom"],
+            "citizenship_ids": ["Q3"],
+            "occupations": ["matematiker", "programmerare"],
+            "occupation_ids": ["Q4", "Q6"],
+        }
+    ]
+
+
+def _binding(**values: str) -> dict:
+    return {name: {"value": value} for name, value in values.items()}

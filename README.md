@@ -39,7 +39,8 @@ uv run python run.py
 The default output is `data/episodes.parquet`, with speaker appearances in
 `data/speakers.parquet` and a join for browsing in
 `data/speaker_appearances.parquet`. The same run also generates the compact
-frontend dataset at `data/episodes.json`. For a quick development run:
+frontend dataset at `data/episodes.json` and the normalized Wikidata speaker
+metadata table at `data/speaker_metadata.parquet`. For a quick development run:
 
 ```shell
 uv run python run.py --max-pages 1 --output data/sample.parquet
@@ -94,6 +95,11 @@ Responses are cached under `data/cache/wikidata`. Pass `--refresh-wikidata`
 to fetch the participant data again, or `--skip-wikidata` to omit this
 optional enrichment.
 
+`speaker_metadata.parquet` has one row per matched Wikidata item. It includes
+Swedish Wikipedia URLs where available (otherwise English), gender, dates of
+birth and death, and labelled/Q-ID lists for citizenship, occupation, and
+occupation.
+
 The music table contains:
 
 - `sr_episode_id`
@@ -129,3 +135,37 @@ Create deployable static files with `npm run build`; the result is written to
 
 Development uses the local `/episodes.json` symbolic link. Production builds
 fetch the canonical JSON directly from the repository on GitHub.
+
+## Local transcripts
+
+`transcribe.py` downloads an episode MP3, then writes a timestamped JSON
+transcript under `data/transcripts/`. By default it uses the MLX q4 conversion
+of KBLab's Swedish KB-Whisper-large model, which runs directly on Apple
+silicon's Metal GPU and includes word timestamps.
+
+Transcribe a complete episode by its `sr_episode_id`:
+
+```sh
+uv run python transcribe.py 2550211
+```
+
+The first run downloads the q4 WhisperMLX model into `data/models/`; local
+audio and transcripts are ignored by Git.
+
+WhisperMLX performs VAD preprocessing and returns segment timestamps. For
+word-level timestamps, enable forced alignment:
+
+```sh
+uv run python transcribe.py 2550211 --force-align-words
+```
+
+Without `--force-align-words`, WhisperMLX uses VAD but returns segment timestamps
+only. Forced alignment downloads a Swedish wav2vec2 model on its first run. Speaker
+diarization is intentionally not enabled yet: it requires a Hugging Face token
+and accepting Pyannote's model agreement.
+
+To transcribe the entire archive sequentially (and safely resume later), run:
+
+```sh
+uv run transcribe_all.py
+```

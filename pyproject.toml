@@ -3,10 +3,11 @@ name = "sommar-i-parquet"
 version = "0.1.0"
 description = "Fetch the Sommar & Vinter i P1 archive and write it as Parquet"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "httpx>=0.28.1",
     "pyarrow>=21.0.0",
+    "whispermlx>=3.12.2",
 ]
 
 [dependency-groups]
