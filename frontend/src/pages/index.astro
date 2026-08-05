@@ -30,44 +30,80 @@ const assetBase = base.endsWith("/") ? base : `${base}/`;
         </p>
       </header>
 
-      <section class="filters" aria-label="Filtrera program">
-        <label class="search-field" for="search">
-          <span>Sök</span>
-          <input
-            id="search"
-            type="search"
-            placeholder="Namn, titel eller sammanfattning"
-            autocomplete="off"
-          />
-        </label>
-        <label for="program-type">
-          <span>Program</span>
-          <select id="program-type">
-            <option value="">Sommar och Vinter</option>
-            <option value="Sommar">Sommar</option>
-            <option value="Vinter">Vinter</option>
-          </select>
-        </label>
-        <fieldset class="year-range">
-          <legend>År</legend>
-          <div class="year-range-values"><output id="year-from-output"></output><span>–</span><output id="year-to-output"></output></div>
-          <div class="year-range-inputs">
-            <input id="year-from" type="range" aria-label="Från år" />
-            <input id="year-to" type="range" aria-label="Till år" />
+      <section aria-label="Filtrera program">
+        <h2 class="filters-title">Filter per</h2>
+        <div class="filters">
+        <fieldset class="filter-group">
+          <legend>Avsnitt</legend>
+          <div class="filter-fields">
+            <label class="search-field" for="search">
+              <span>Sök i sammanfattningar</span>
+              <input
+                id="search"
+                type="search"
+                placeholder="Sök i avsnittens texter"
+                autocomplete="off"
+              />
+            </label>
+            <label for="program-type">
+              <span>Program</span>
+              <select id="program-type">
+                <option value="">Sommar och Vinter</option>
+                <option value="Sommar">Sommar</option>
+                <option value="Vinter">Vinter</option>
+              </select>
+            </label>
+            <fieldset class="year-range">
+              <legend>År</legend>
+              <div class="year-range-values"><output id="year-from-output"></output><span>–</span><output id="year-to-output"></output></div>
+              <div class="year-range-inputs">
+                <input id="year-from" type="range" aria-label="Från år" />
+                <input id="year-to" type="range" aria-label="Till år" />
+              </div>
+            </fieldset>
+            <label for="sort">
+              <span>Sortera</span>
+              <select id="sort">
+                <option value="newest">Nyast först</option>
+                <option value="oldest">Äldst först</option>
+                <option value="speaker">Värd A–Ö</option>
+              </select>
+            </label>
           </div>
         </fieldset>
-        <label for="sort">
-          <span>Sortera</span>
-          <select id="sort">
-            <option value="newest">Nyast först</option>
-            <option value="oldest">Äldst först</option>
-            <option value="speaker">Värd A–Ö</option>
-          </select>
-        </label>
-        <label class="checkbox-filter" for="returning">
-          <input id="returning" type="checkbox" />
-          <span>Återkommande värdar</span>
-        </label>
+        <fieldset class="filter-group">
+          <legend>Värd</legend>
+          <div class="filter-fields">
+            <label for="gender">
+              <span>Kön</span>
+              <select id="gender"><option value="">Alla</option></select>
+            </label>
+            <label for="citizenship">
+              <span>Medborgarskap</span>
+              <select id="citizenship"><option value="">Alla</option></select>
+            </label>
+            <label for="occupation">
+              <span>Sysselsättning</span>
+              <select id="occupation"><option value="">Alla</option></select>
+            </label>
+            <fieldset class="age-range">
+              <legend>Ålder vid programmet</legend>
+              <div class="age-range-values"><output id="age-from-output"></output><span>–</span><output id="age-to-output"></output></div>
+              <div class="age-range-inputs">
+                <input id="age-from" type="range" aria-label="Från ålder" />
+                <input id="age-to" type="range" aria-label="Till ålder" />
+              </div>
+            </fieldset>
+            <label class="checkbox-filter" for="returning">
+              <input id="returning" type="checkbox" />
+              <span>Återkommande värdar</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="filter-group filter-group-disabled" disabled>
+          <legend>Innehåll <small>Kommer snart</small></legend>
+        </fieldset>
+        </div>
       </section>
 
       <section class="results" aria-live="polite">
@@ -91,7 +127,10 @@ const assetBase = base.endsWith("/") ? base : `${base}/`;
             <span data-role="date"></span>
             <span data-role="duration"></span>
           </div>
-          <h2><a data-role="episode-link" target="_blank" rel="noreferrer"><span data-role="speakers"></span></a></h2>
+          <h2>
+            <a data-role="episode-link" target="_blank" rel="noreferrer"><span data-role="speakers"></span></a>
+          </h2>
+          <div data-role="speaker-wiki-links" class="speaker-wiki-links"></div>
           <p data-role="summary" class="summary"></p>
           <a class="listen-link" data-role="episode-link" target="_blank" rel="noreferrer">Till programmet <span aria-hidden="true">→</span></a>
         </div>

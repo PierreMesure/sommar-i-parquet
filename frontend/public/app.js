@@ -7,6 +7,13 @@ const elements = {
   yearToOutput: document.querySelector("#year-to-output"),
   sort: document.querySelector("#sort"),
   returning: document.querySelector("#returning"),
+  gender: document.querySelector("#gender"),
+  citizenship: document.querySelector("#citizenship"),
+  occupation: document.querySelector("#occupation"),
+  ageFrom: document.querySelector("#age-from"),
+  ageTo: document.querySelector("#age-to"),
+  ageFromOutput: document.querySelector("#age-from-output"),
+  ageToOutput: document.querySelector("#age-to-output"),
   reset: document.querySelector("#reset"),
   count: document.querySelector("#result-count"),
   list: document.querySelector("#episode-list"),
@@ -35,10 +42,14 @@ function unique(values) {
 }
 
 let yearBounds;
+let ageBounds;
+let speakersById = {};
 
 function populateYearRange(episodes) {
   const years = episodes.map((episode) => Number(episode.date.slice(0, 4))).filter(Number.isFinite);
-  yearBounds = { min: Math.min(...years), max: Math.max(...years) };
+  yearBounds = years.length
+    ? { min: Math.min(...years), max: Math.max(...years) }
+    : { min: 0, max: 0 };
   for (const input of [elements.yearFrom, elements.yearTo]) {
     input.min = yearBounds.min;
     input.max = yearBounds.max;
@@ -46,6 +57,21 @@ function populateYearRange(episodes) {
   elements.yearFrom.value = yearBounds.min;
   elements.yearTo.value = yearBounds.max;
   updateYearRangeLabels();
+}
+
+function populateAgeRange(episodes) {
+  const ages = episodes.flatMap((episode) => episode.ages || []).filter(Number.isFinite);
+  ageBounds = ages.length
+    ? { min: Math.min(...ages), max: Math.max(...ages) }
+    : { min: 0, max: 0 };
+  for (const input of [elements.ageFrom, elements.ageTo]) {
+    input.min = ageBounds.min;
+    input.max = ageBounds.max;
+    input.disabled = !ages.length;
+  }
+  elements.ageFrom.value = ageBounds.min;
+  elements.ageTo.value = ageBounds.max;
+  updateAgeRangeLabels();
 }
 
 function updateYearRangeLabels() {
@@ -59,8 +85,44 @@ function updateYearRangeLabels() {
   range.style.setProperty("--range-to", `${toPercent}%`);
 }
 
+function updateAgeRangeLabels() {
+  elements.ageFromOutput.value = ageBounds?.min ? `${elements.ageFrom.value} år` : "–";
+  elements.ageToOutput.value = ageBounds?.max ? `${elements.ageTo.value} år` : "–";
+  const span = (ageBounds?.max || 0) - (ageBounds?.min || 0);
+  const fromPercent = span ? ((Number(elements.ageFrom.value) - ageBounds.min) / span) * 100 : 0;
+  const toPercent = span ? ((Number(elements.ageTo.value) - ageBounds.min) / span) * 100 : 100;
+  const range = elements.ageFrom.closest(".age-range");
+  range.style.setProperty("--range-from", `${fromPercent}%`);
+  range.style.setProperty("--range-to", `${toPercent}%`);
+}
+
 function displaySpeakers(episode) {
-  return episode.speakers.join(", ");
+  return (episode.speakers || [])
+    .map((qid) => speakersById[qid]?.name || qid)
+    .join(", ");
+}
+
+function populateSelect(select, values) {
+  const options = unique(values).sort((left, right) => left.localeCompare(right, "sv"));
+  for (const value of options) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.append(option);
+  }
+}
+
+function populateSpeakerFilters() {
+  const speakers = Object.values(speakersById);
+  populateSelect(elements.gender, speakers.map((speaker) => speaker.gender));
+  populateSelect(
+    elements.citizenship,
+    speakers.flatMap((speaker) => speaker.citizenships || []),
+  );
+  populateSelect(
+    elements.occupation,
+    speakers.flatMap((speaker) => speaker.occupations || []),
+  );
 }
 
 function episodeUrl(episode) {
@@ -118,6 +180,12 @@ function render() {
   const toYear = Number(elements.yearTo.value);
   const sort = elements.sort.value;
   const returningOnly = elements.returning.checked;
+  const gender = elements.gender.value;
+  const citizenship = elements.citizenship.value;
+  const occupation = elements.occupation.value;
+  const fromAge = Number(elements.ageFrom.value);
+  const toAge = Number(elements.ageTo.value);
+  const ageIsUnfiltered = !ageBounds || (fromAge === ageBounds.min && toAge === ageBounds.max);
 
   const filtered = records.filter((record) => {
     const { episode } = record;
@@ -125,13 +193,17 @@ function render() {
       (!query || record.searchable.includes(query)) &&
       (!programType || episode.type === programType) &&
       (Number(episode.date.slice(0, 4)) >= fromYear && Number(episode.date.slice(0, 4)) <= toYear) &&
-      (!returningOnly || episode.returning)
+      (!returningOnly || record.returning) &&
+      (!gender || record.genders.has(gender)) &&
+      (!citizenship || record.citizenships.has(citizenship)) &&
+      (!occupation || record.occupations.has(occupation)) &&
+      (ageIsUnfiltered || (episode.ages || []).some((age) => age >= fromAge && age <= toAge))
     );
   });
 
   filtered.sort((left, right) => {
     if (returningOnly) {
-      const groupComparison = left.group.localeCompare(right.group, "sv");
+      const groupComparison = left.group.name.localeCompare(right.group.name, "sv");
       if (groupComparison) return groupComparison;
       return sort === "oldest"
         ? left.episode.date.localeCompare(right.episode.date)
@@ -146,7 +218,16 @@ function render() {
   elements.count.textContent = `${filtered.length.toLocaleString("sv-SE")} av ${episodes.length.toLocaleString("sv-SE")} program`;
   elements.empty.hidden = filtered.length > 0;
   const yearIsUnfiltered = fromYear === yearBounds.min && toYear === yearBounds.max;
-  elements.reset.hidden = !query && !programType && yearIsUnfiltered && sort === "newest" && !returningOnly;
+  elements.reset.hidden =
+    !query &&
+    !programType &&
+    yearIsUnfiltered &&
+    sort === "newest" &&
+    !returningOnly &&
+    !gender &&
+    !citizenship &&
+    !occupation &&
+    ageIsUnfiltered;
   virtualItems = [];
   let previousGroup;
   for (const record of filtered) {
@@ -155,9 +236,11 @@ function render() {
       : sort !== "speaker"
       ? record.episode.date.slice(0, 4)
         : null;
-    if (group && group !== previousGroup) {
-      virtualItems.push({ type: "header", label: group });
-      previousGroup = group;
+    const groupKey = group && typeof group === "object" ? group.id : group;
+    const groupLabel = group && typeof group === "object" ? group.name : group;
+    if (groupKey && groupKey !== previousGroup) {
+      virtualItems.push({ type: "header", label: groupLabel });
+      previousGroup = groupKey;
     }
     virtualItems.push({ type: "episode", record });
   }
@@ -255,6 +338,7 @@ function createEpisodeCard(episode) {
   const programType = card.querySelector('[data-role="program-type"]');
   const date = card.querySelector('[data-role="date"]');
   const speakers = card.querySelector('[data-role="speakers"]');
+  const wikiLinks = card.querySelector('[data-role="speaker-wiki-links"]');
   programType.textContent = episode.type || "P1";
   date.textContent = formatDate(episode.date);
   card.querySelector('[data-role="duration"]').textContent = formatDuration(episode.minutes);
@@ -266,18 +350,37 @@ function createEpisodeCard(episode) {
   } else {
     speakers.textContent = displaySpeakers(episode);
   }
+  for (const qid of episode.speakers || []) {
+    const speaker = speakersById[qid];
+    if (!speaker?.wiki) continue;
+    const link = document.createElement("a");
+    link.className = "speaker-wiki-link";
+    link.href = speaker.wiki;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = "Wikipedia";
+    link.setAttribute("aria-label", `Wikipedia: ${speaker.name}`);
+    wikiLinks.append(link);
+  }
   card.querySelector('[data-role="summary"]').textContent = episode.description;
   return card.firstElementChild;
 }
 
-async function loadEpisodes() {
+async function loadArchive() {
   const response = await fetch(EPISODES_URL);
   if (!response.ok) throw new Error("Kunde inte läsa programdata.");
-  const payload = await response.json();
-  return payload.episodes;
+  return response.json();
 }
 
-for (const input of [elements.search, elements.programType, elements.sort, elements.returning]) {
+for (const input of [
+  elements.search,
+  elements.programType,
+  elements.sort,
+  elements.returning,
+  elements.gender,
+  elements.citizenship,
+  elements.occupation,
+]) {
   input.addEventListener("input", scheduleRender);
   input.addEventListener("change", render);
 }
@@ -289,6 +392,18 @@ for (const [input, other, direction] of [
     if (direction === "from" && Number(input.value) > Number(other.value)) other.value = input.value;
     if (direction === "to" && Number(input.value) < Number(other.value)) other.value = input.value;
     updateYearRangeLabels();
+    scheduleRender();
+  });
+  input.addEventListener("change", render);
+}
+for (const [input, other, direction] of [
+  [elements.ageFrom, elements.ageTo, "from"],
+  [elements.ageTo, elements.ageFrom, "to"],
+]) {
+  input.addEventListener("input", () => {
+    if (direction === "from" && Number(input.value) > Number(other.value)) other.value = input.value;
+    if (direction === "to" && Number(input.value) < Number(other.value)) other.value = input.value;
+    updateAgeRangeLabels();
     scheduleRender();
   });
   input.addEventListener("change", render);
@@ -306,19 +421,45 @@ elements.reset.addEventListener("click", () => {
   updateYearRangeLabels();
   elements.sort.value = "newest";
   elements.returning.checked = false;
+  elements.gender.value = "";
+  elements.citizenship.value = "";
+  elements.occupation.value = "";
+  elements.ageFrom.value = ageBounds.min;
+  elements.ageTo.value = ageBounds.max;
+  updateAgeRangeLabels();
   render();
 });
 
 try {
-  const episodes = await loadEpisodes();
+  const archive = await loadArchive();
+  const episodes = Array.isArray(archive?.episodes) ? archive.episodes : [];
+  speakersById = archive?.speakers && typeof archive.speakers === "object"
+    ? archive.speakers
+    : {};
   populateYearRange(episodes);
+  populateAgeRange(episodes);
+  populateSpeakerFilters();
   records = episodes.map((episode) => {
+    const speakerRecords = (episode.speakers || [])
+      .map((qid) => ({ qid, ...speakersById[qid] }))
+      .filter((speaker) => speaker.name);
+    const returningSpeakers = speakerRecords.filter((speaker) => speaker.count > 1);
     const speakerName = displaySpeakers(episode);
     return {
       episode,
       speakerName,
-      group: episode.group || "",
-      searchable: [speakerName, episode.description]
+      returning: returningSpeakers.length > 0,
+      group: returningSpeakers.length
+        ? { id: returningSpeakers[0].qid, name: returningSpeakers[0].name }
+        : null,
+      genders: new Set(speakerRecords.map((speaker) => speaker.gender).filter(Boolean)),
+      citizenships: new Set(
+        speakerRecords.flatMap((speaker) => speaker.citizenships || []),
+      ),
+      occupations: new Set(
+        speakerRecords.flatMap((speaker) => speaker.occupations || []),
+      ),
+      searchable: [episode.description || ""]
         .join(" ")
         .toLocaleLowerCase("sv-SE"),
     };
