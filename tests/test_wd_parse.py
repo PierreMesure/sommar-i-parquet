@@ -1,4 +1,11 @@
-from src.wd.parse import enrich_speakers_with_wikidata, parse_speaker_metadata
+from src.wd.parse import (
+    attach_episode_speakers,
+    attach_episode_speaker_ages,
+    age_at_date,
+    build_speaker_records,
+    enrich_speakers_with_wikidata,
+    parse_speaker_metadata,
+)
 
 
 def test_season_participant_match_has_priority() -> None:
@@ -126,6 +133,84 @@ def test_stage_names_match_wikidata_items_labelled_with_real_names() -> None:
     assert [speaker["wikidata_id"] for speaker in result] == ["Q100", "Q101"]
 
 
+def test_emil_beer_uses_verified_qid_override() -> None:
+    result = enrich_speakers_with_wikidata(
+        [{"sr_episode_id": 1, "speaker": "Emil Beer"}],
+        episodes=[{"sr_episode_id": 1, "date": "2016-08-02"}],
+        season_participants=[],
+    )
+
+    assert result[0]["wikidata_id"] == "Q113960293"
+
+
+def test_normalized_episode_and_speaker_records() -> None:
+    appearances = [
+        {
+            "sr_episode_id": 1,
+            "speaker_index": 1,
+            "speaker": "Ada King",
+            "wikidata_id": "Q1",
+            "date": "2000-07-01",
+        },
+        {
+            "sr_episode_id": 2,
+            "speaker_index": 1,
+            "speaker": "Ada Lovelace",
+            "wikidata_id": "Q1",
+            "date": "2001-07-01",
+        },
+    ]
+    episodes = attach_episode_speakers(
+        [{"sr_episode_id": 1}, {"sr_episode_id": 2}], appearances
+    )
+    speakers = build_speaker_records(
+        appearances,
+        [
+            {
+                "wikidata_id": "Q1",
+                "gender": "kvinna",
+                "occupations": ["matematiker"],
+            }
+        ],
+        episodes=[
+            {"sr_episode_id": 1, "date": "2000-07-01"},
+            {"sr_episode_id": 2, "date": "2001-07-01"},
+        ],
+    )
+
+    assert episodes == [
+        {"sr_episode_id": 1, "episode_speakers": ["Q1"]},
+        {"sr_episode_id": 2, "episode_speakers": ["Q1"]},
+    ]
+    assert speakers[0]["speaker"] == "Ada Lovelace"
+    assert speakers[0]["sr_names"] == ["Ada King", "Ada Lovelace"]
+    assert speakers[0]["episode_count"] == 2
+    assert speakers[0]["gender"] == "kvinna"
+    assert speakers[0]["occupations"] == ["matematiker"]
+
+
+def test_age_is_conservative_for_partial_birth_dates() -> None:
+    assert age_at_date("1980", "2020-01-01") == 39
+    assert age_at_date("1980-06", "2020-06-30") == 39
+    assert age_at_date("1980-06-15", "2020-06-15") == 40
+    assert age_at_date("1980", "2020-01-01", "2010") is None
+
+
+def test_episode_speaker_ages_follow_speaker_order() -> None:
+    result = attach_episode_speaker_ages(
+        [{"sr_episode_id": 1, "date": "2020-07-01", "episode_speakers": ["Q1", "Q2"]}],
+        [
+            {"sr_episode_id": 1, "speaker_index": 2, "wikidata_id": "Q2"},
+            {"sr_episode_id": 1, "speaker_index": 1, "wikidata_id": "Q1"},
+        ],
+        [
+            {"wikidata_id": "Q1", "birth_date": "1980-08-01"},
+            {"wikidata_id": "Q2", "birth_date": "1990"},
+        ],
+    )
+    assert result[0]["speaker_ages"] == [39, 29]
+
+
 def test_non_qid_participant_placeholder_is_ignored() -> None:
     result = enrich_speakers_with_wikidata(
         [{"sr_episode_id": 1, "speaker": "Name variant"}],
@@ -153,6 +238,8 @@ def test_parse_speaker_metadata_prefers_swedish_labels_and_wikipedia() -> None:
         [
             _binding(
                 speaker="http://www.wikidata.org/entity/Q1",
+                speakerLabel="Ada Lovelace",
+                speakerDescription="brittisk matematiker",
                 svArticle="https://sv.wikipedia.org/wiki/Ada_Lovelace",
                 gender="http://www.wikidata.org/entity/Q2",
                 genderLabel="kvinna",
@@ -176,6 +263,8 @@ def test_parse_speaker_metadata_prefers_swedish_labels_and_wikipedia() -> None:
     assert result == [
         {
             "wikidata_id": "Q1",
+            "wikidata_label": "Ada Lovelace",
+            "wikidata_description": "brittisk matematiker",
             "wikipedia_url": "https://sv.wikipedia.org/wiki/Ada_Lovelace",
             "gender": "kvinna",
             "gender_id": "Q2",

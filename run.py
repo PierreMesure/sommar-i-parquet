@@ -16,13 +16,18 @@ from src.sr.parse import (
 from src.utils.write import (
     MUSIC_SCHEMA,
     SPEAKER_APPEARANCE_SCHEMA,
-    SPEAKER_METADATA_SCHEMA,
     SPEAKER_SCHEMA,
     write_frontend_json,
     write_parquet,
 )
 from src.wd.download import download_season_participants, download_speaker_metadata
-from src.wd.parse import enrich_speakers_with_wikidata, parse_speaker_metadata
+from src.wd.parse import (
+    attach_episode_speakers,
+    attach_episode_speaker_ages,
+    build_speaker_records,
+    enrich_speakers_with_wikidata,
+    parse_speaker_metadata,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,7 +44,7 @@ def parse_args() -> argparse.Namespace:
         "--speakers-output",
         type=Path,
         default=Path("data/speakers.parquet"),
-        help="Speaker-appearance Parquet output (default: data/speakers.parquet)",
+        help="Normalized speaker Parquet output (default: data/speakers.parquet)",
     )
     parser.add_argument(
         "--speaker-appearances-output",
@@ -52,12 +57,6 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/episodes.json"),
         help="Compact JSON output for the static frontend (default: data/episodes.json)",
-    )
-    parser.add_argument(
-        "--speaker-metadata-output",
-        type=Path,
-        default=Path("data/speaker_metadata.parquet"),
-        help="Wikidata speaker metadata output (default: data/speaker_metadata.parquet)",
     )
     parser.add_argument(
         "--page-size",
@@ -131,17 +130,46 @@ def main() -> None:
         raw_episodes,
         include_specials=args.include_specials,
     )
-    speakers = parse_speakers(episodes)
+    speaker_appearances = parse_speakers(episodes)
     if not args.skip_wikidata:
         season_participants = download_season_participants(
             force_refresh=args.refresh_wikidata,
         )
-        speakers = enrich_speakers_with_wikidata(
-            speakers,
+        speaker_appearances = enrich_speakers_with_wikidata(
+            speaker_appearances,
             episodes=episodes,
             season_participants=season_participants,
         )
-    episode_rows = episode_metadata(episodes)
+
+    metadata = (
+        download_speaker_metadata(
+            [
+                speaker["wikidata_id"]
+                for speaker in speaker_appearances
+                if speaker["wikidata_id"]
+            ],
+            force_refresh=args.refresh_wikidata,
+        )
+        if not args.skip_wikidata
+        else []
+    )
+    speaker_metadata = parse_speaker_metadata(metadata)
+    episode_rows = attach_episode_speakers(
+        episode_metadata(episodes),
+        speaker_appearances,
+        require_qids=not args.skip_wikidata,
+    )
+    episode_rows = attach_episode_speaker_ages(
+        episode_rows,
+        speaker_appearances,
+        speaker_metadata,
+    )
+    speakers = build_speaker_records(
+        speaker_appearances,
+        speaker_metadata,
+        episodes=episode_rows,
+    )
+
     output = write_parquet(episode_rows, args.output)
     logging.info("Wrote %d episodes to %s", len(episodes), output)
     speakers_output = write_parquet(
@@ -149,40 +177,25 @@ def main() -> None:
         args.speakers_output,
         schema=SPEAKER_SCHEMA,
     )
-    logging.info("Wrote %d speaker appearances to %s", len(speakers), speakers_output)
+    logging.info("Wrote %d speakers to %s", len(speakers), speakers_output)
 
     episodes_by_id = {episode["sr_episode_id"]: episode for episode in episode_rows}
-    speaker_appearances = [
-        {**episodes_by_id[speaker["sr_episode_id"]], **speaker} for speaker in speakers
+    enriched_appearances = [
+        {**episodes_by_id[speaker["sr_episode_id"]], **speaker}
+        for speaker in speaker_appearances
     ]
     appearances_output = write_parquet(
-        speaker_appearances,
+        enriched_appearances,
         args.speaker_appearances_output,
         schema=SPEAKER_APPEARANCE_SCHEMA,
     )
     logging.info(
         "Wrote %d enriched speaker appearances to %s",
-        len(speaker_appearances),
+        len(enriched_appearances),
         appearances_output,
     )
     frontend_output = write_frontend_json(episode_rows, speakers, args.frontend_output)
     logging.info("Wrote %d frontend episodes to %s", len(episodes), frontend_output)
-
-    metadata = (
-        download_speaker_metadata(
-            [speaker["wikidata_id"] for speaker in speakers if speaker["wikidata_id"]],
-            force_refresh=args.refresh_wikidata,
-        )
-        if not args.skip_wikidata
-        else []
-    )
-    speaker_metadata = parse_speaker_metadata(metadata)
-    metadata_output = write_parquet(
-        speaker_metadata,
-        args.speaker_metadata_output,
-        schema=SPEAKER_METADATA_SCHEMA,
-    )
-    logging.info("Wrote %d Wikidata speaker records to %s", len(speaker_metadata), metadata_output)
 
     if not args.skip_music:
         music_episode_ids = {

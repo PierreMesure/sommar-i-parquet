@@ -120,7 +120,7 @@ PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX psv: <http://www.wikidata.org/prop/statement/value/>
 PREFIX wikibase: <http://wikiba.se/ontology#>
-SELECT DISTINCT ?speaker ?svArticle ?enArticle
+SELECT DISTINCT ?speaker ?speakerLabel ?speakerDescription ?svArticle ?enArticle
        ?gender ?genderLabel
        ?birthDate ?birthPrecision ?deathDate ?deathPrecision
        ?citizenship ?citizenshipLabel

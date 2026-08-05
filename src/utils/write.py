@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 from collections.abc import Sequence
 import json
 from pathlib import Path
@@ -26,16 +25,34 @@ EPISODE_SCHEMA = pa.schema(
         ("image_url", pa.string()),
         ("image_credit", pa.string()),
         ("short_summary", pa.string()),
+        ("episode_speakers", pa.list_(pa.string())),
+        ("speaker_ages", pa.list_(pa.int32())),
     ]
 )
 
+SPEAKER_METADATA_FIELDS = [
+    ("wikidata_label", pa.string()),
+    ("wikidata_description", pa.string()),
+    ("wikipedia_url", pa.string()),
+    ("gender", pa.string()),
+    ("gender_id", pa.string()),
+    ("birth_date", pa.string()),
+    ("death_date", pa.string()),
+    ("citizenships", pa.list_(pa.string())),
+    ("citizenship_ids", pa.list_(pa.string())),
+    ("occupations", pa.list_(pa.string())),
+    ("occupation_ids", pa.list_(pa.string())),
+]
+
 SPEAKER_SCHEMA = pa.schema(
     [
-        ("sr_episode_id", pa.int64()),
-        ("speaker_index", pa.int32()),
-        ("speaker_appearance_id", pa.string()),
-        ("speaker", pa.string()),
         ("wikidata_id", pa.string()),
+        ("speaker", pa.string()),
+        ("sr_names", pa.list_(pa.string())),
+        ("episode_count", pa.int32()),
+        ("episode_ids", pa.list_(pa.int64())),
+        ("ages_at_episodes", pa.list_(pa.int32())),
+        *SPEAKER_METADATA_FIELDS,
     ]
 )
 
@@ -52,15 +69,7 @@ SPEAKER_APPEARANCE_SCHEMA = pa.schema(
 SPEAKER_METADATA_SCHEMA = pa.schema(
     [
         ("wikidata_id", pa.string()),
-        ("wikipedia_url", pa.string()),
-        ("gender", pa.string()),
-        ("gender_id", pa.string()),
-        ("birth_date", pa.string()),
-        ("death_date", pa.string()),
-        ("citizenships", pa.list_(pa.string())),
-        ("citizenship_ids", pa.list_(pa.string())),
-        ("occupations", pa.list_(pa.string())),
-        ("occupation_ids", pa.list_(pa.string())),
+        *SPEAKER_METADATA_FIELDS,
     ]
 )
 
@@ -98,23 +107,49 @@ def write_frontend_json(
     speakers: Sequence[dict[str, Any]],
     output_path: str | Path,
 ) -> Path:
-    """Write the compact, static-frontend representation of the archive."""
-    speakers_by_episode: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    """Write normalized, compact data for the static frontend."""
+    speakers_by_id: dict[str, dict[str, Any]] = {}
     for speaker in speakers:
-        speakers_by_episode[int(speaker["sr_episode_id"])].append(speaker)
-    for appearances in speakers_by_episode.values():
-        appearances.sort(key=lambda appearance: int(appearance["speaker_index"]))
+        qid = str(speaker["wikidata_id"])
+        record: dict[str, Any] = {
+            "name": speaker["speaker"],
+            "count": int(speaker["episode_count"]),
+            "ages": [
+                age for age in speaker.get("ages_at_episodes", [])
+                if age is not None
+            ],
+        }
+        optional_values = {
+            "aliases": [
+                name
+                for name in speaker.get("sr_names", [])
+                if name != speaker["speaker"]
+            ],
+            "label": speaker.get("wikidata_label"),
+            "description": speaker.get("wikidata_description"),
+            "wiki": speaker.get("wikipedia_url"),
+            "gender": speaker.get("gender"),
+            "born": speaker.get("birth_date"),
+            "died": speaker.get("death_date"),
+            "citizenships": speaker.get("citizenships", []),
+            "occupations": speaker.get("occupations", []),
+        }
+        record.update(
+            {key: value for key, value in optional_values.items() if value}
+        )
+        speakers_by_id[qid] = record
 
-    appearance_counts = Counter(
-        appearance["speaker"]
-        for appearances in speakers_by_episode.values()
-        for appearance in appearances
-    )
     records = []
     for episode in episodes:
         episode_id = int(episode["sr_episode_id"])
-        names = [appearance["speaker"] for appearance in speakers_by_episode[episode_id]]
-        returning_names = [name for name in names if appearance_counts[name] > 1]
+        speaker_ids = list(episode.get("episode_speakers") or [])
+        missing_speakers = [qid for qid in speaker_ids if qid not in speakers_by_id]
+        if missing_speakers:
+            raise ValueError(
+                f"Episode {episode_id} references missing speakers: "
+                f"{', '.join(missing_speakers)}"
+            )
+        names = [speakers_by_id[qid]["name"] for qid in speaker_ids]
         image_url = episode.get("image_url") or ""
         records.append(
             {
@@ -124,17 +159,20 @@ def write_frontend_json(
                 "minutes": (int(episode["length_seconds"]) + 30) // 60,
                 "image": image_url.removeprefix(SR_IMAGE_URL_PREFIX) or None,
                 "description": episode["short_summary"],
-                "speakers": names,
+                "speakers": speaker_ids,
+                "ages": list(episode.get("speaker_ages") or []),
                 "initials": _speaker_initials(names),
-                "returning": bool(returning_names),
-                "group": returning_names[0] if returning_names else None,
             }
         )
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps({"episodes": records}, ensure_ascii=False, separators=(",", ":")),
+        json.dumps(
+            {"speakers": speakers_by_id, "episodes": records},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
         encoding="utf-8",
     )
     return path.resolve()

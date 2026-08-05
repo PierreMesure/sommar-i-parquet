@@ -36,11 +36,11 @@ uv sync
 uv run python run.py
 ```
 
-The default output is `data/episodes.parquet`, with speaker appearances in
-`data/speakers.parquet` and a join for browsing in
-`data/speaker_appearances.parquet`. The same run also generates the compact
-frontend dataset at `data/episodes.json` and the normalized Wikidata speaker
-metadata table at `data/speaker_metadata.parquet`. For a quick development run:
+The default outputs are two normalized tables: one row per broadcast in
+`data/episodes.parquet` and one row per Wikidata speaker in
+`data/speakers.parquet`. A redundant join for browsing and debugging is written
+to `data/speaker_appearances.parquet`. The same run also generates the compact
+frontend dataset at `data/episodes.json`. For a quick development run:
 
 ```shell
 uv run python run.py --max-pages 1 --output data/sample.parquet
@@ -57,7 +57,8 @@ shows, anniversary and recap programmes, Q&As, alternate-language copies,
 multi-guest specials, records without downloadable audio, and audio shorter
 than 15 minutes. Use `--include-specials` to inspect the unfiltered SR archive.
 
-The episode table contains episode-only columns:
+The episode table contains one row per SR episode. Speaker relationships are
+stored as an ordered list of Wikidata Q-IDs:
 
 - `sr_episode_id`
 - `sr_audio_id`
@@ -72,33 +73,47 @@ The episode table contains episode-only columns:
 - `image_url`
 - `image_credit`
 - `short_summary`
+- `episode_speakers`
+- `speaker_ages` (ages aligned with `episode_speakers`)
 
-The speaker table contains one row per credited speaker, with:
+The speaker table contains one row per Wikidata item, with:
 
-- `sr_episode_id`
-- `speaker_index`
-- `speaker_appearance_id` (`<sr_episode_id>:<speaker_index>`)
-- `speaker`
 - `wikidata_id`
+- `speaker` (the most recent name used by SR)
+- `sr_names`
+- `episode_count`
+- `episode_ids` and `ages_at_episodes`
+- `wikidata_label`
+- `wikidata_description`
+- `wikipedia_url`
+- `gender` and `gender_id`
+- `birth_date` and `death_date`
+- `citizenships` and `citizenship_ids`
+- `occupations` and `occupation_ids`
+
+Age values are calculated at the broadcast date. When Wikidata only provides a
+birth year or month, the parser uses the lower possible age; dates after a
+recorded death are treated as unmatched rather than producing an implausible
+age.
 
 `speaker_appearances.parquet` repeats the episode columns alongside these
-speaker fields for convenient browsing. It is intentionally redundant; use the
-episode and speaker tables as the canonical data.
+appearance fields for convenient browsing. It is intentionally redundant; use
+the episode and speaker tables as the canonical data.
 
-Wikidata enrichment is stored on speaker appearances, not episodes. A unique
-Wikidata participant on a broadcast date is accepted as a conservative
-date-only match; when several participants share a date, the Wikidata label
-must match the SR speaker name. Empty `wikidata_id` values mean the script
-deliberately did not guess.
+Wikidata enrichment is stored once on the canonical speaker row. Episodes refer
+to those rows through `episode_speakers`; this also represents programmes with
+multiple hosts without duplicating episode metadata. A unique Wikidata
+participant on a broadcast date is accepted as a conservative date-only match;
+when several participants share a date, the Wikidata label must match the SR
+speaker name.
 
 Responses are cached under `data/cache/wikidata`. Pass `--refresh-wikidata`
 to fetch the participant data again, or `--skip-wikidata` to omit this
 optional enrichment.
 
-`speaker_metadata.parquet` has one row per matched Wikidata item. It includes
-Swedish Wikipedia URLs where available (otherwise English), gender, dates of
-birth and death, and labelled/Q-ID lists for citizenship, occupation, and
-occupation.
+The speaker metadata includes Swedish Wikipedia URLs where available (otherwise
+English), gender, dates of birth and death, and labelled/Q-ID lists for
+citizenship and occupation.
 
 The music table contains:
 
@@ -123,6 +138,10 @@ uv run pytest
 The `frontend/` directory contains a static Astro browser for the archive. Its
 `public/episodes.json` is a symbolic link to the canonical `data/episodes.json`
 written by `run.py`; run the data pipeline before starting the frontend.
+
+Filters are divided into episode metadata (when), speaker metadata (who), and
+episode content (what). The first two use the normalized episode and speaker
+records. Content topics and keywords will be added after transcript analysis.
 
 ```shell
 cd frontend
