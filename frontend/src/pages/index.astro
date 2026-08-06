@@ -23,11 +23,16 @@ const assetBase = base.endsWith("/") ? base : `${base}/`;
   <body>
     <main class="page-shell">
       <header class="hero">
-        <p class="eyebrow">Sveriges Radios arkiv</p>
-        <h1>{title}</h1>
-        <p class="intro">
-          Hitta ett program att lyssna på — från de tidigaste sändningarna till idag.
-        </p>
+        <div class="maypole-mark" aria-hidden="true">
+          <img src={`${assetBase}logo.webp`} alt="" width="320" height="320" />
+        </div>
+        <div class="hero-copy">
+          <h1>{title}</h1>
+          <p class="intro">
+            Hitta ett program att lyssna på — från de tidigaste sändningarna till idag.
+          </p>
+          <p class="disclaimer">Skapad av <a href="https://pierre.mesu.re" target="_blank" rel="noreferrer">Pierre Mesure</a>, ingen koppling till Sveriges Radio</p>
+        </div>
       </header>
 
       <section aria-label="Filtrera program">

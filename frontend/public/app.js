@@ -134,6 +134,12 @@ function imageUrl(episode) {
 }
 
 let records = [];
+const PAGE_SIZE = 100;
+let recordLimit = PAGE_SIZE;
+let filteredRecordCount = 0;
+let loadedRecordCount = 0;
+let lastFilterSignature;
+let loadMorePending = false;
 let virtualItems = [];
 let itemOffsets = [];
 let virtualHeight = 0;
@@ -186,6 +192,23 @@ function render() {
   const fromAge = Number(elements.ageFrom.value);
   const toAge = Number(elements.ageTo.value);
   const ageIsUnfiltered = !ageBounds || (fromAge === ageBounds.min && toAge === ageBounds.max);
+  const filterSignature = JSON.stringify([
+    query,
+    programType,
+    fromYear,
+    toYear,
+    sort,
+    returningOnly,
+    gender,
+    citizenship,
+    occupation,
+    fromAge,
+    toAge,
+  ]);
+  if (filterSignature !== lastFilterSignature) {
+    recordLimit = PAGE_SIZE;
+    lastFilterSignature = filterSignature;
+  }
 
   const filtered = records.filter((record) => {
     const { episode } = record;
@@ -215,7 +238,12 @@ function render() {
       : right.episode.date.localeCompare(left.episode.date);
   });
 
-  elements.count.textContent = `${filtered.length.toLocaleString("sv-SE")} av ${episodes.length.toLocaleString("sv-SE")} program`;
+  const visibleRecords = filtered.slice(0, recordLimit);
+  filteredRecordCount = filtered.length;
+  loadedRecordCount = visibleRecords.length;
+  elements.count.textContent = visibleRecords.length < filtered.length
+    ? `${visibleRecords.length.toLocaleString("sv-SE")} av ${filtered.length.toLocaleString("sv-SE")} program visas`
+    : `${filtered.length.toLocaleString("sv-SE")} av ${episodes.length.toLocaleString("sv-SE")} program`;
   elements.empty.hidden = filtered.length > 0;
   const yearIsUnfiltered = fromYear === yearBounds.min && toYear === yearBounds.max;
   elements.reset.hidden =
@@ -230,7 +258,7 @@ function render() {
     ageIsUnfiltered;
   virtualItems = [];
   let previousGroup;
-  for (const record of filtered) {
+  for (const record of visibleRecords) {
     const group = returningOnly
       ? record.group
       : sort !== "speaker"
@@ -301,6 +329,18 @@ function scheduleVisibleRender() {
   scrollFrame = window.requestAnimationFrame(() => {
     scrollFrame = undefined;
     renderVisibleCards();
+  });
+}
+
+function loadMoreNearPageEnd() {
+  if (loadMorePending || loadedRecordCount >= filteredRecordCount) return;
+  const remaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+  if (remaining > Math.max(900, window.innerHeight)) return;
+  loadMorePending = true;
+  recordLimit += PAGE_SIZE;
+  render();
+  window.requestAnimationFrame(() => {
+    loadMorePending = false;
   });
 }
 
@@ -408,7 +448,10 @@ for (const [input, other, direction] of [
   });
   input.addEventListener("change", render);
 }
-window.addEventListener("scroll", scheduleVisibleRender, { passive: true });
+window.addEventListener("scroll", () => {
+  scheduleVisibleRender();
+  loadMoreNearPageEnd();
+}, { passive: true });
 window.addEventListener("resize", () => {
   buildVirtualLayout();
   scheduleVisibleRender();
