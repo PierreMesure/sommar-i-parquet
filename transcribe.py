@@ -9,13 +9,13 @@ from typing import Any
 
 import pyarrow.parquet as pq
 
-from src.whisper.download import download_file, download_huggingface_model
-from src.whisper.transcribe import transcribe_audio_whispermlx
+from src.whisper.download import download_file
+from src.whisper.transcribe import transcribe_audio_whisperx
 
 
-MLX_MODEL_REPO = "jegeblad/kb-whisper-large-mlx-q4"
-DEFAULT_MLX_MODEL_PATH = Path("data/models/kb-whisper-large-mlx-q4")
-DEFAULT_ALIGNMENT_MODEL_DIR = Path("data/models/whispermlx-alignment")
+KB_WHISPER_MODEL = "KBLab/kb-whisper-large"
+DEFAULT_MODEL_DIR = Path("data/models/kb-whisper-large-ct2")
+DEFAULT_ALIGNMENT_MODEL_DIR = Path("data/models/whisperx-alignment")
 DEFAULT_TRANSCRIPTS_DIR = Path("data/transcripts")
 
 
@@ -34,12 +34,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("episode_id", type=int, help="SR episode ID from data/episodes.parquet")
     parser.add_argument("--episodes-path", type=Path, default=Path("data/episodes.parquet"))
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_TRANSCRIPTS_DIR)
-    parser.add_argument(
-        "--force-align-words",
-        action="store_true",
-        help="With WhisperMLX, run wav2vec2 forced alignment for word timestamps.",
+    alignment_group = parser.add_mutually_exclusive_group()
+    alignment_group.add_argument(
+        "--force-align-words", dest="force_align_words", action="store_true", default=True,
+        help="Run wav2vec2 forced alignment for word timestamps (the default).",
     )
-    parser.add_argument("--model-path", type=Path)
+    alignment_group.add_argument(
+        "--no-align-words", dest="force_align_words", action="store_false",
+        help="Skip forced alignment and omit word timestamps.",
+    )
+    parser.add_argument("--model", default=KB_WHISPER_MODEL)
+    parser.add_argument("--model-dir", type=Path, default=DEFAULT_MODEL_DIR)
+    parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--force-download", action="store_true")
     parser.add_argument("--force-transcribe", action="store_true")
     return parser.parse_args()
@@ -55,19 +61,18 @@ def main() -> None:
         logging.info("Transcript already exists: %s", transcript_path)
         return
 
-    model_path = args.model_path or DEFAULT_MLX_MODEL_PATH
-    model_ready_path = model_path / "weights.safetensors"
-    if not model_ready_path.exists():
-        logging.info("Downloading MLX KB-Whisper-large model to %s", model_path)
-        download_huggingface_model(MLX_MODEL_REPO, model_path)
+    if args.batch_size < 1:
+        raise ValueError("--batch-size must be positive.")
     logging.info("Downloading %s", episode["source_title"])
     download_file(episode["mp3_url"], audio_path, overwrite=args.force_download)
     logging.info("Transcribing %s", episode["source_title"])
-    transcript = transcribe_audio_whispermlx(
+    transcript = transcribe_audio_whisperx(
         audio_path=audio_path,
         output_path=transcript_path,
-        model_path=model_path,
+        model=args.model,
+        model_dir=args.model_dir,
         alignment_model_dir=DEFAULT_ALIGNMENT_MODEL_DIR,
+        batch_size=args.batch_size,
         force_align_words=args.force_align_words,
     )
     transcript["sommar_i_parquet"].update(

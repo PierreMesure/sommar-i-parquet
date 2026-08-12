@@ -7,7 +7,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
     "httpx>=0.28.1",
     "pyarrow>=21.0.0",
-    "whispermlx>=3.12.2",
+    "whisperx>=3.8.6",
 ]
 
 [dependency-groups]

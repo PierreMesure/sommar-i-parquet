@@ -15,13 +15,13 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 
-from src.whisper.download import download_file, download_huggingface_model
-from src.whisper.transcribe import WhisperMLXSession
+from src.whisper.download import download_file
+from src.whisper.transcribe import WhisperXSession
 from transcribe import (
     DEFAULT_ALIGNMENT_MODEL_DIR,
-    DEFAULT_MLX_MODEL_PATH,
+    DEFAULT_MODEL_DIR,
     DEFAULT_TRANSCRIPTS_DIR,
-    MLX_MODEL_REPO,
+    KB_WHISPER_MODEL,
 )
 
 
@@ -32,23 +32,22 @@ def parse_args() -> argparse.Namespace:
         "--episodes-per-worker",
         type=int,
         default=10,
-        help="Restart the WhisperMLX worker after this many episodes (default: 10).",
+        help="Restart the WhisperX worker after this many episodes (default: 10).",
     )
+    parser.add_argument("--batch-size", type=int, default=32)
     # These options are used by the parent process to launch bounded workers.
     parser.add_argument("--worker-start", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--worker-end", type=int, help=argparse.SUPPRESS)
     return parser.parse_args()
 
 
-def run_worker(episodes: list[dict], start: int, end: int) -> None:
+def run_worker(episodes: list[dict], start: int, end: int, batch_size: int) -> None:
     """Transcribe one bounded batch in a process that can be discarded."""
-    model_path = DEFAULT_MLX_MODEL_PATH
-    if not (model_path / "weights.safetensors").exists():
-        download_huggingface_model(MLX_MODEL_REPO, model_path)
-    session = WhisperMLXSession(
-        model_path=model_path,
+    session = WhisperXSession(
+        model=KB_WHISPER_MODEL,
+        model_dir=DEFAULT_MODEL_DIR,
         alignment_model_dir=DEFAULT_ALIGNMENT_MODEL_DIR,
-        force_align_words=False,
+        batch_size=batch_size,
     )
 
     total = len(episodes)
@@ -66,8 +65,12 @@ def run_worker(episodes: list[dict], start: int, end: int) -> None:
         transcript = session.transcribe(audio_path)
         transcript["sommar_i_parquet"] = {
             "audio_path": str(audio_path),
-            "engine": "whispermlx (reused MLX ASR + Silero VAD)",
-            "model_path": str(model_path),
+            "engine": "whisperx (reused KB-Whisper-large FP16 + Silero VAD + wav2vec2 alignment)",
+            "model": KB_WHISPER_MODEL,
+            "model_dir": str(DEFAULT_MODEL_DIR),
+            "alignment_model_dir": str(DEFAULT_ALIGNMENT_MODEL_DIR),
+            "batch_size": batch_size,
+            "force_align_words": True,
             "episode_id": episode_id,
             "episode_url": episode.get("episode_url"),
             "mp3_url": episode.get("mp3_url"),
@@ -83,13 +86,15 @@ def main() -> None:
     args = parse_args()
     if args.episodes_per_worker < 1:
         raise ValueError("--episodes-per-worker must be positive.")
+    if args.batch_size < 1:
+        raise ValueError("--batch-size must be positive.")
 
     episodes = pq.read_table(args.episodes_path).to_pylist()
     total = len(episodes)
     if args.worker_start is not None or args.worker_end is not None:
         if args.worker_start is None or args.worker_end is None:
             raise ValueError("Both --worker-start and --worker-end are required together.")
-        run_worker(episodes, args.worker_start, args.worker_end)
+        run_worker(episodes, args.worker_start, args.worker_end, args.batch_size)
         return
 
     script_path = Path(__file__).resolve()
@@ -118,6 +123,8 @@ def main() -> None:
                 str(args.episodes_path),
                 "--episodes-per-worker",
                 str(args.episodes_per_worker),
+                "--batch-size",
+                str(args.batch_size),
                 "--worker-start",
                 str(start),
                 "--worker-end",

@@ -158,9 +158,9 @@ fetch the canonical JSON directly from the repository on GitHub.
 ## Local transcripts
 
 `transcribe.py` downloads an episode MP3, then writes a timestamped JSON
-transcript under `data/transcripts/`. By default it uses the MLX q4 conversion
-of KBLab's Swedish KB-Whisper-large model, which runs directly on Apple
-silicon's Metal GPU and includes word timestamps.
+transcript under `data/transcripts/`. It uses the official CTranslate2 files
+from KBLab's Swedish KB-Whisper-large model through WhisperX on an NVIDIA CUDA
+GPU, with FP16 inference and batched transcription.
 
 Transcribe a complete episode by its `sr_episode_id`:
 
@@ -168,23 +168,27 @@ Transcribe a complete episode by its `sr_episode_id`:
 uv run python transcribe.py 2550211
 ```
 
-The first run downloads the q4 WhisperMLX model into `data/models/`; local
-audio and transcripts are ignored by Git.
+The first run downloads the official CTranslate2 model into `data/models/`; it
+also downloads WhisperX's Swedish wav2vec2 alignment model. Local models, audio,
+and transcripts are ignored by Git.
 
-WhisperMLX performs VAD preprocessing and returns segment timestamps. For
-word-level timestamps, enable forced alignment:
+WhisperX performs VAD preprocessing, batched ASR, and forced alignment. Word
+timestamps are enabled by default; to skip the alignment step:
 
 ```sh
-uv run python transcribe.py 2550211 --force-align-words
+uv run transcribe.py 2550211 --no-align-words
 ```
 
-Without `--force-align-words`, WhisperMLX uses VAD but returns segment timestamps
-only. Forced alignment downloads a Swedish wav2vec2 model on its first run. Speaker
-diarization is intentionally not enabled yet: it requires a Hugging Face token
-and accepting Pyannote's model agreement.
+The default ASR batch size is 32 for the server's 48 GB RTX A6000. Reduce it if
+the GPU is shared, for example `--batch-size 16`. Speaker diarization is
+intentionally not enabled yet: it requires a Hugging Face token and accepting
+Pyannote's model agreement.
 
 To transcribe the entire archive sequentially (and safely resume later), run:
 
 ```sh
 uv run transcribe_all.py
 ```
+
+Pass `--batch-size` to tune GPU memory use. The all-episodes command reuses its
+models within each worker and writes word-level timestamps by default.
