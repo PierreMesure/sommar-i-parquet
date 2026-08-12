@@ -188,3 +188,57 @@ To transcribe the entire archive sequentially (and safely resume later), run:
 ```sh
 uv run transcribe_all.py
 ```
+
+## Transcript topic modelling
+
+`topic_model.py` turns complete transcript JSON files into semantically coherent,
+timestamped chunks and fits an initial BERTopic model. By default it uses the
+Apple-Silicon-native 4-bit MLX conversion of Harrier 270M
+(`majentik/harrier-oss-v1-270m-MLX-4bit`) without an instruction prefix: Harrier
+uses instructions on the query side, whereas transcript units are documents.
+The unquantized Sentence Transformers backend remains available
+with `--embedding-backend sentence-transformers`.
+
+Chunk boundaries combine two signals:
+
+- a change between rolling Harrier embeddings on either side of the boundary;
+- the pause between transcript segments, used as evidence of an edited music
+  break.
+
+Pauses of at least 1.5 seconds are preserved as candidates and pauses of at
+least 5 seconds receive a strong music-break score. Neither is an unconditional
+cut: a dynamic program chooses the best boundaries for the full episode while
+keeping chunks between the configured minimum and maximum lengths. All
+candidate scores and decisions are written to `boundaries.parquet` so the
+heuristic can be audited and retuned.
+
+The target chunk size is 450 words, but the default maximum is 1,800 words so a
+coherent chapter can remain intact. To avoid embedding those long texts a second
+time, final chunk vectors are, by default, word-weighted means of the already
+computed small-unit vectors. Use `--chunk-embedding-strategy direct` only when
+testing full-chunk embeddings on a machine with ample memory.
+
+Run the complete available transcript corpus with:
+
+```sh
+uv run python topic_model.py
+```
+
+For a smaller experiment, or to inspect chaptering before fitting BERTopic:
+
+```sh
+uv run python topic_model.py --limit 10
+uv run python topic_model.py --chunks-only
+```
+
+For the lowest local memory usage, reduce the unit batch size further:
+
+```sh
+uv run python topic_model.py --batch-size 4
+```
+
+Outputs are written under `data/nlp/` and ignored by Git. They include semantic
+chunks, boundary diagnostics, chunk and episode topic assignments, topic
+keywords and examples, a two-dimensional episode map, and cached embeddings.
+Embedding caches are incremental: newly completed transcripts are added on the
+next run without recomputing unchanged text.
