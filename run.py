@@ -114,6 +114,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Refresh the cached Wikidata participant data.",
     )
+    parser.add_argument(
+        "--allow-missing-wikidata",
+        action="store_true",
+        help="Keep speaker appearances that cannot yet be matched to Wikidata.",
+    )
     return parser.parse_args()
 
 
@@ -157,7 +162,7 @@ def main() -> None:
     episode_rows = attach_episode_speakers(
         episode_metadata(episodes),
         speaker_appearances,
-        require_qids=not args.skip_wikidata,
+        require_qids=not args.skip_wikidata and not args.allow_missing_wikidata,
     )
     episode_rows = attach_episode_speaker_ages(
         episode_rows,

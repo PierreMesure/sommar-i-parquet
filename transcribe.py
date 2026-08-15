@@ -10,6 +10,7 @@ from typing import Any
 import pyarrow.parquet as pq
 
 from src.whisper.download import download_file
+from src.whisper.quality import quarantine_transcript, strip_artifacts, transcript_artifacts
 from src.whisper.transcribe import transcribe_audio_whisperx
 
 
@@ -45,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--model", default=KB_WHISPER_MODEL)
     parser.add_argument("--model-dir", type=Path, default=DEFAULT_MODEL_DIR)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--force-download", action="store_true")
     parser.add_argument("--force-transcribe", action="store_true")
     return parser.parse_args()
@@ -61,8 +62,8 @@ def main() -> None:
         logging.info("Transcript already exists: %s", transcript_path)
         return
 
-    if args.batch_size < 1:
-        raise ValueError("--batch-size must be positive.")
+    if not 1 <= args.batch_size <= 16:
+        raise ValueError("--batch-size must be between 1 and 16 to avoid batched-decoding artifacts.")
     logging.info("Downloading %s", episode["source_title"])
     download_file(episode["mp3_url"], audio_path, overwrite=args.force_download)
     logging.info("Transcribing %s", episode["source_title"])
@@ -85,9 +86,22 @@ def main() -> None:
     )
     import json
 
+    artifacts = transcript_artifacts(transcript)
+    retrying = any((transcript_path.parent / "faulty").glob(f"{args.episode_id}-*.json"))
+    if artifacts:
+        transcript["sommar_i_parquet"]["artifacts"] = artifacts
+        if retrying:
+            strip_artifacts(transcript, artifacts)
+
     with transcript_path.open("w", encoding="utf-8") as output:
         json.dump(transcript, output, ensure_ascii=False, indent=2)
         output.write("\n")
+    if artifacts and not retrying:
+        faulty_path = quarantine_transcript(transcript_path, artifacts)
+        logging.warning("Archived faulty transcript at %s", faulty_path)
+        return
+    if artifacts:
+        logging.warning("Retried transcript still contained artifacts; stripped and retained them in metadata")
     logging.info("Wrote timestamped transcript: %s", transcript_path)
 
 

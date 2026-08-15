@@ -16,6 +16,12 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 from src.whisper.download import download_file
+from src.whisper.quality import (
+    quarantine_transcript,
+    strip_artifacts,
+    strip_introductions,
+    transcript_artifacts,
+)
 from src.whisper.transcribe import WhisperXSession
 from transcribe import (
     DEFAULT_ALIGNMENT_MODEL_DIR,
@@ -34,7 +40,11 @@ def parse_args() -> argparse.Namespace:
         default=10,
         help="Restart the WhisperX worker after this many episodes (default: 10).",
     )
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument(
+        "--manifest", type=Path,
+        help="JSON manifest containing an episodes list with episode_id values to transcribe.",
+    )
     # These options are used by the parent process to launch bounded workers.
     parser.add_argument("--worker-start", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--worker-end", type=int, help=argparse.SUPPRESS)
@@ -51,6 +61,10 @@ def run_worker(episodes: list[dict], start: int, end: int, batch_size: int) -> N
     )
 
     total = len(episodes)
+    retrying_episode_ids = {
+        path.stem.split("-", maxsplit=1)[0]
+        for path in (DEFAULT_TRANSCRIPTS_DIR / "faulty").rglob("*.json")
+    }
     for index, episode in enumerate(episodes[start:end], start=start + 1):
         episode_id = episode["sr_episode_id"]
         print(f"[{index}/{total}] Episode {episode_id}", flush=True)
@@ -63,7 +77,8 @@ def run_worker(episodes: list[dict], start: int, end: int, batch_size: int) -> N
         download_file(episode["mp3_url"], audio_path)
         print(f"INFO Transcribing {episode.get('source_title', episode_id)}", flush=True)
         transcript = session.transcribe(audio_path)
-        transcript["sommar_i_parquet"] = {
+        strip_introductions(transcript)
+        transcript.setdefault("sommar_i_parquet", {}).update({
             "audio_path": str(audio_path),
             "engine": "whisperx (reused KB-Whisper-large FP16 + Silero VAD + wav2vec2 alignment)",
             "model": KB_WHISPER_MODEL,
@@ -75,21 +90,37 @@ def run_worker(episodes: list[dict], start: int, end: int, batch_size: int) -> N
             "episode_url": episode.get("episode_url"),
             "mp3_url": episode.get("mp3_url"),
             "source_title": episode.get("source_title"),
-        }
+        })
+        artifacts = transcript_artifacts(transcript)
+        if artifacts:
+            transcript["sommar_i_parquet"]["artifacts"] = artifacts
+            if str(episode_id) in retrying_episode_ids:
+                strip_artifacts(transcript, artifacts)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("w", encoding="utf-8") as output:
             json.dump(transcript, output, ensure_ascii=False, indent=2)
             output.write("\n")
+        if artifacts and str(episode_id) not in retrying_episode_ids:
+            faulty_path = quarantine_transcript(output_path, artifacts)
+            print(f"WARNING Archived faulty transcript at {faulty_path}", flush=True)
+        elif artifacts:
+            print("WARNING Retried transcript still contained artifacts; stripped and retained them in metadata", flush=True)
 
 
 def main() -> None:
     args = parse_args()
     if args.episodes_per_worker < 1:
         raise ValueError("--episodes-per-worker must be positive.")
-    if args.batch_size < 1:
-        raise ValueError("--batch-size must be positive.")
+    if not 1 <= args.batch_size <= 16:
+        raise ValueError("--batch-size must be between 1 and 16 to avoid batched-decoding artifacts.")
 
     episodes = pq.read_table(args.episodes_path).to_pylist()
+    if args.manifest is not None:
+        manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        episode_ids = {int(row["episode_id"]) for row in manifest["episodes"]}
+        episodes = [episode for episode in episodes if int(episode["sr_episode_id"]) in episode_ids]
+        if len(episodes) != len(episode_ids):
+            raise ValueError("Manifest contains episode IDs absent from the episode table.")
     total = len(episodes)
     if args.worker_start is not None or args.worker_end is not None:
         if args.worker_start is None or args.worker_end is None:
@@ -125,6 +156,7 @@ def main() -> None:
                 str(args.episodes_per_worker),
                 "--batch-size",
                 str(args.batch_size),
+                *( ["--manifest", str(args.manifest)] if args.manifest is not None else [] ),
                 "--worker-start",
                 str(start),
                 "--worker-end",

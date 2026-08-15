@@ -7,12 +7,29 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.whisper.quality import strip_introductions
+
+
+CONSERVATIVE_ASR_OPTIONS = {
+    "beam_size": 5,
+    "patience": 1.0,
+    "length_penalty": 1.0,
+    "repetition_penalty": 1.12,
+    "no_repeat_ngram_size": 3,
+    "temperatures": [0.0],
+    "compression_ratio_threshold": 2.0,
+    "log_prob_threshold": -0.8,
+    "no_speech_threshold": 0.5,
+    "condition_on_previous_text": False,
+}
+VAD_OPTIONS = {"chunk_size": 15}
+
 
 class WhisperXSession:
     """Reusable CUDA WhisperX pipeline; load ASR and alignment models once."""
 
     def __init__(self, *, model: str, model_dir: Path, alignment_model_dir: Path,
-                 batch_size: int = 32, force_align_words: bool = True,
+                 batch_size: int = 16, force_align_words: bool = True,
                  language: str = "sv") -> None:
         import whisperx
 
@@ -25,6 +42,8 @@ class WhisperXSession:
             compute_type="float16",
             language=language,
             vad_method="silero",
+            vad_options=VAD_OPTIONS,
+            asr_options=CONSERVATIVE_ASR_OPTIONS,
             download_root=str(model_dir),
         )
         self._alignment_model = None
@@ -42,12 +61,13 @@ class WhisperXSession:
                 transcript["segments"], self._alignment_model,
                 self._alignment_metadata, audio, device="cuda"
             )
+        strip_introductions(transcript)
         return transcript
 
 
 def transcribe_audio_whisperx(*, audio_path: Path, output_path: Path,
                               model: str, model_dir: Path, alignment_model_dir: Path,
-                              batch_size: int = 32, force_align_words: bool = True,
+                              batch_size: int = 16, force_align_words: bool = True,
                               language: str = "sv") -> dict[str, Any]:
     """Transcribe one episode with CUDA WhisperX and optional word alignment."""
     session = WhisperXSession(
@@ -55,7 +75,7 @@ def transcribe_audio_whisperx(*, audio_path: Path, output_path: Path,
         batch_size=batch_size, force_align_words=force_align_words, language=language,
     )
     transcript = session.transcribe(audio_path)
-    transcript["sommar_i_parquet"] = {
+    transcript.setdefault("sommar_i_parquet", {}).update({
         "audio_path": str(audio_path),
         "created_at": datetime.now(UTC).isoformat(),
         "engine": "whisperx (KB-Whisper-large FP16 + Silero VAD + wav2vec2 alignment)"
@@ -65,7 +85,7 @@ def transcribe_audio_whisperx(*, audio_path: Path, output_path: Path,
         "alignment_model_dir": str(alignment_model_dir),
         "batch_size": batch_size,
         "force_align_words": force_align_words,
-    }
+    })
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as output:
         json.dump(transcript, output, ensure_ascii=False, indent=2)
