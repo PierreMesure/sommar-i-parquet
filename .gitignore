@@ -9,7 +9,9 @@ scripts/
 data/cache/
 data/*.parquet
 data/models/
-data/nlp/
+data/nlp/*
+!data/nlp/
+!data/nlp/topics.json
 data/transcripts/
 quickstatements/
 
