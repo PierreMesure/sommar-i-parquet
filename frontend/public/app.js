@@ -1,6 +1,7 @@
 const elements = {
   search: document.querySelector("#search"),
   programType: document.querySelector("#program-type"),
+  listenersHost: document.querySelector("#listeners-host"),
   yearFrom: document.querySelector("#year-from"),
   yearTo: document.querySelector("#year-to"),
   yearFromOutput: document.querySelector("#year-from-output"),
@@ -338,6 +339,7 @@ function render() {
   const episodes = records.map((record) => record.episode);
   const query = elements.search.value.trim().toLocaleLowerCase("sv-SE");
   const programType = elements.programType.value;
+  const listenersHostOnly = Boolean(elements.listenersHost?.checked);
   const fromYear = Number(elements.yearFrom.value);
   const toYear = Number(elements.yearTo.value);
   const returningOnly = elements.returning.checked;
@@ -354,6 +356,7 @@ function render() {
   const filterSignature = JSON.stringify([
     query,
     programType,
+    listenersHostOnly,
     fromYear,
     toYear,
     sort,
@@ -377,6 +380,7 @@ function render() {
     return (
       (!query || record.searchable.includes(query)) &&
       (!programType || episode.type === programType) &&
+      (!listenersHostOnly || Boolean(episode.is_listeners_host)) &&
       (Number(episode.date.slice(0, 4)) >= fromYear && Number(episode.date.slice(0, 4)) <= toYear) &&
       (!returningOnly || record.returning) &&
       (!gender || record.genders.has(gender)) &&
@@ -432,6 +436,7 @@ function render() {
   elements.reset.hidden =
     !query &&
     !programType &&
+    !listenersHostOnly &&
     yearIsUnfiltered &&
     sort === "newest" &&
     !returningOnly &&
@@ -976,13 +981,14 @@ elements.filtersToggle.addEventListener("click", () => {
 for (const input of [
   elements.search,
   elements.programType,
+  elements.listenersHost,
   elements.sort,
   elements.returning,
   elements.gender,
   elements.citizenship,
   elements.occupation,
   elements.topic,
-]) {
+].filter(Boolean)) {
   input.addEventListener("input", scheduleRender);
   input.addEventListener("change", render);
 }
@@ -1052,6 +1058,7 @@ elements.reset.addEventListener("click", () => {
   setFilterControlsLocked(false);
   elements.search.value = "";
   elements.programType.value = "";
+  if (elements.listenersHost) elements.listenersHost.checked = false;
   elements.yearFrom.value = yearBounds.min;
   elements.yearTo.value = yearBounds.max;
   updateYearRangeLabels();

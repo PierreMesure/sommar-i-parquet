@@ -73,6 +73,7 @@ stored as an ordered list of Wikidata Q-IDs:
 - `image_url`
 - `image_credit`
 - `short_summary`
+- `is_listeners_host`
 - `episode_speakers`
 - `speaker_ages` (ages aligned with `episode_speakers`)
 

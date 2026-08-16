@@ -25,6 +25,7 @@ EPISODE_SCHEMA = pa.schema(
         ("image_url", pa.string()),
         ("image_credit", pa.string()),
         ("short_summary", pa.string()),
+        ("is_listeners_host", pa.bool_()),
         ("episode_speakers", pa.list_(pa.string())),
         ("speaker_ages", pa.list_(pa.int32())),
     ]
@@ -151,19 +152,20 @@ def write_frontend_json(
             )
         names = [speakers_by_id[qid]["name"] for qid in speaker_ids]
         image_url = episode.get("image_url") or ""
-        records.append(
-            {
-                "id": episode_id,
-                "date": episode["date"],
-                "type": episode["program_type"],
-                "minutes": (int(episode["length_seconds"]) + 30) // 60,
-                "image": image_url.removeprefix(SR_IMAGE_URL_PREFIX) or None,
-                "description": episode["short_summary"],
-                "speakers": speaker_ids,
-                "ages": list(episode.get("speaker_ages") or []),
-                "initials": _speaker_initials(names),
-            }
-        )
+        record = {
+            "id": episode_id,
+            "date": episode["date"],
+            "type": episode["program_type"],
+            "minutes": (int(episode["length_seconds"]) + 30) // 60,
+            "image": image_url.removeprefix(SR_IMAGE_URL_PREFIX) or None,
+            "description": episode["short_summary"],
+            "speakers": speaker_ids,
+            "ages": list(episode.get("speaker_ages") or []),
+            "initials": _speaker_initials(names),
+        }
+        if episode.get("is_listeners_host"):
+            record["is_listeners_host"] = True
+        records.append(record)
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)

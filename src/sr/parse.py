@@ -72,6 +72,28 @@ SPECIAL_TITLE_PATTERNS = (
 )
 IJUSTWANTTOBECOOL_MEMBERS = ("Victor Beer", "Emil Beer", "Joel Adolphson")
 UNSPLIT_SPEAKER_NAMES = {"Niklas Natt och Dag"}
+LISTENER_HOST_PATTERN = re.compile(
+    r"\blyssnarnas\s+sommar(?:värd|prat(?:are)?)\b",
+    re.IGNORECASE,
+)
+LISTENER_HOST_EPISODE_IDS = {
+    921565,  # Tommy Ivarsson, 2017
+    1077289,  # Jonas Waltelius, 2018
+    2578973,  # Anders Eriksson, 2025
+}
+
+
+def _is_listeners_host(
+    episode_id: int,
+    title: str,
+    summary: str,
+    program_type: str | None,
+) -> bool:
+    if episode_id in LISTENER_HOST_EPISODE_IDS:
+        return True
+    if program_type != "Sommar":
+        return False
+    return bool(LISTENER_HOST_PATTERN.search(f"{title} {summary}"))
 
 
 def _parse_sr_datetime(value: str) -> datetime:
@@ -184,6 +206,9 @@ def parse_episode(episode: dict[str, Any]) -> dict[str, Any]:
         "image_url": episode.get("imageurltemplate") or episode.get("imageurl"),
         "image_credit": episode.get("photographer"),
         "short_summary": episode.get("description"),
+        "is_listeners_host": _is_listeners_host(
+            int(episode["id"]), title, summary, program_type
+        ),
     }
 
 

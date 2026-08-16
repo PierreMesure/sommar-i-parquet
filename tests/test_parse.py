@@ -47,7 +47,39 @@ def test_parse_episode() -> None:
         "image_url": None,
         "image_credit": None,
         "short_summary": "MUSIKER, ARTIST, PROGRAMLEDARE.",
+        "is_listeners_host": False,
     }
+
+
+def test_listeners_host_detected_from_description_or_title() -> None:
+    from_desc = {
+        "id": 2181521,
+        "title": "Eva Armini 2023",
+        "description": "Lyssnarnas Sommarvärd om att bli bortadopterad...",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2023-07-12T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+    }
+    from_title = {
+        "id": 12345,
+        "title": "Emilia Lind (Lyssnarnas Sommarvärd 2016)",
+        "description": "Student.",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2016-07-20T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+    }
+    from_override = {
+        "id": 921565,  # Tommy Ivarsson, 2017
+        "title": "Tommy Ivarsson",
+        "description": "Om vad som händer när man lever i den värsta av mardrömmar...",
+        "url": "https://example.test/episode",
+        "publishdateutc": "2017-07-19T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+    }
+
+    assert parse_episode(from_desc)["is_listeners_host"] is True
+    assert parse_episode(from_title)["is_listeners_host"] is True
+    assert parse_episode(from_override)["is_listeners_host"] is True
 
 
 def test_parse_iso_date_and_missing_audio() -> None:

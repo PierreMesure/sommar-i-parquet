@@ -23,15 +23,28 @@ SPEAKER_METADATA_BATCH_SIZE = 100
 LOGGER = logging.getLogger(__name__)
 QID_RE = re.compile(r"^Q[1-9][0-9]*$")
 SEASON_PARTICIPANTS_QUERY = """
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
 SELECT ?speaker ?speakerLabel ?date
 WHERE {
   ?season wdt:P179 wd:Q7560435;
           p:P710 ?statement.
   ?statement ps:P710 ?speaker;
              pq:P585 ?date.
-  SERVICE wikibase:label {
-    bd:serviceParam wikibase:language "sv,en".
+  OPTIONAL {
+    ?speaker rdfs:label ?svLabel.
+    FILTER(LANG(?svLabel) = "sv")
   }
+  OPTIONAL {
+    ?speaker rdfs:label ?enLabel.
+    FILTER(LANG(?enLabel) = "en")
+  }
+  BIND(COALESCE(?svLabel, ?enLabel) AS ?speakerLabel)
 }
 """
 
@@ -74,41 +87,34 @@ def download_season_participants(
     if cached is not None and not force_refresh:
         return cached
 
-    try:
-        with httpx.Client(
-            timeout=30.0,
-            headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "application/sparql-results+json",
-                "Accept-Encoding": "gzip, deflate",
-            },
-        ) as client:
-            for attempt in range(2):
-                response = client.get(
-                    WIKIDATA_SPARQL_URL,
-                    params={"query": SEASON_PARTICIPANTS_QUERY, "format": "json"},
-                )
-                if response.status_code != httpx.codes.TOO_MANY_REQUESTS:
-                    response.raise_for_status()
-                    bindings = response.json()["results"]["bindings"]
-                    break
-                if attempt == 0:
-                    retry_seconds = _retry_after_seconds(response)
-                    LOGGER.warning(
-                        "Wikidata's query service rate-limited this request; retrying "
-                        "once in %d seconds.",
-                        retry_seconds,
-                    )
-                    time.sleep(retry_seconds)
-                    continue
+    with httpx.Client(
+        timeout=60.0,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/sparql-results+json",
+            "Accept-Encoding": "gzip, deflate",
+        },
+    ) as client:
+        for attempt in range(2):
+            response = client.post(
+                WIKIDATA_SPARQL_URL,
+                data={"query": SEASON_PARTICIPANTS_QUERY, "format": "json"},
+            )
+            if response.status_code != httpx.codes.TOO_MANY_REQUESTS:
                 response.raise_for_status()
-    except httpx.HTTPError as error:
-        LOGGER.warning(
-            "Could not download Wikidata season participants (%s); "
-            "continuing without Wikidata enrichment.",
-            error,
-        )
-        return []
+                bindings = response.json()["results"]["bindings"]
+                break
+            if attempt == 0:
+                retry_seconds = _retry_after_seconds(response)
+                LOGGER.warning(
+                    "Wikidata's query service rate-limited this request; retrying "
+                    "once in %d seconds.",
+                    retry_seconds,
+                )
+                time.sleep(retry_seconds)
+                continue
+            response.raise_for_status()
+
     _write_json(path, bindings)
     return bindings
 
@@ -157,7 +163,7 @@ def _download_speaker_metadata_bindings(qids: list[str]) -> list[dict[str, Any]]
     values = " ".join(f"wd:{qid}" for qid in qids)
     query = SPEAKER_METADATA_QUERY % values
     with httpx.Client(
-        timeout=30.0,
+        timeout=60.0,
         headers={
             "User-Agent": USER_AGENT,
             "Accept": "application/sparql-results+json",
@@ -205,11 +211,7 @@ def download_speaker_metadata(
 
     for start in range(0, len(missing_qids), SPEAKER_METADATA_BATCH_SIZE):
         batch = missing_qids[start : start + SPEAKER_METADATA_BATCH_SIZE]
-        try:
-            bindings.extend(_download_speaker_metadata_bindings(batch))
-        except httpx.HTTPError as error:
-            LOGGER.warning("Could not download Wikidata speaker metadata (%s).", error)
-            break
+        bindings.extend(_download_speaker_metadata_bindings(batch))
         cached_qids.update(batch)
         _write_json(
             path,
