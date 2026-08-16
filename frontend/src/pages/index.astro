@@ -40,8 +40,11 @@ const assetBase = base.endsWith("/") ? base : `${base}/`;
       </header>
 
       <section aria-label="Filtrera program">
-        <h2 class="filters-title">Filter per</h2>
-        <div class="filters">
+        <div class="filters-heading">
+          <h2 class="filters-title">Filter per</h2>
+          <button id="filters-toggle" class="filters-toggle" type="button" aria-expanded="true" aria-controls="filters">Dölj filter</button>
+        </div>
+        <div id="filters" class="filters">
         <fieldset class="filter-group">
           <legend>Avsnitt</legend>
           <div class="filter-fields">

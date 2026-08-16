@@ -14,6 +14,8 @@ const elements = {
   topic: document.querySelector("#topic"),
   themeLabel: document.querySelector('[data-role="theme-label"]'),
   topicLabel: document.querySelector('[data-role="topic-label"]'),
+  filters: document.querySelector("#filters"),
+  filtersToggle: document.querySelector("#filters-toggle"),
   contentFilters: document.querySelector("#content-filters"),
   mapToggle: document.querySelector("#map-toggle"),
   mapLabel: document.querySelector('[data-role="map-label"]'),
@@ -30,6 +32,14 @@ const elements = {
   archiveView: document.querySelector("#archive-view"),
   map: document.querySelector("#episode-map"),
 };
+
+function setFiltersOpen(open) {
+  elements.filters.classList.toggle("is-hidden", !open);
+  elements.filtersToggle.setAttribute("aria-expanded", String(open));
+  elements.filtersToggle.textContent = open ? "Dölj filter" : "Visa filter";
+}
+
+setFiltersOpen(!window.matchMedia("(max-width: 520px)").matches);
 
 function updateTopicSortAvailability() {
   const option = elements.sort.querySelector('option[value="topic-match"]');
@@ -958,6 +968,10 @@ async function loadTopics() {
     return null;
   }
 }
+
+elements.filtersToggle.addEventListener("click", () => {
+  setFiltersOpen(elements.filters.classList.contains("is-hidden"));
+});
 
 for (const input of [
   elements.search,

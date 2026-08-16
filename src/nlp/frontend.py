@@ -15,17 +15,30 @@ def related_episode_rows(
     episode_ids: Sequence[int],
     *,
     top_k: int = 8,
+    center: bool = True,
 ) -> list[dict[str, Any]]:
-    """Return each episode's nearest cosine neighbours in embedding space."""
+    """Return nearest neighbours using cosine similarity.
+
+    Episode averages have a strong shared ``personal narrative`` direction.
+    Removing the corpus mean before cosine scoring reduces that common-mode
+    similarity and gives the displayed scores more useful separation. Raw
+    cosine still determines the neighbours and is retained for auditing.
+    """
     vectors = np.asarray(episode_embeddings, dtype=np.float32)
     if vectors.ndim != 2 or len(vectors) != len(episode_ids):
         raise ValueError("Episode IDs and the embedding matrix must have equal length.")
     if not len(vectors):
         return []
 
-    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-    vectors = vectors / np.maximum(norms, 1e-12)
+    raw_vectors = vectors / np.maximum(
+        np.linalg.norm(vectors, axis=1, keepdims=True), 1e-12
+    )
+    raw_similarities = raw_vectors @ raw_vectors.T
+    if center:
+        vectors = vectors - vectors.mean(axis=0, keepdims=True)
+    vectors = vectors / np.maximum(np.linalg.norm(vectors, axis=1, keepdims=True), 1e-12)
     similarities = vectors @ vectors.T
+    np.fill_diagonal(raw_similarities, -np.inf)
     np.fill_diagonal(similarities, -np.inf)
     neighbour_count = min(max(0, top_k), max(0, len(episode_ids) - 1))
     rows: list[dict[str, Any]] = []
@@ -40,6 +53,7 @@ def related_episode_rows(
                     "sr_episode_id": int(episode_id),
                     "related_episode_id": int(episode_ids[int(candidate)]),
                     "similarity": float(similarities[index, int(candidate)]),
+                    "raw_similarity": float(raw_similarities[index, int(candidate)]),
                     "rank": rank,
                 }
             )

@@ -20,7 +20,11 @@ h1 { grid-column: 2; grid-row: 1; font-family: "Iowan Old Style", "Palatino Lino
 .disclaimer { color: #6f7469; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .72rem; grid-column: 2; grid-row: 3; line-height: 1.45; margin: 0; }
 .disclaimer a { color: #40574e; text-underline-offset: .16em; }
 
-.filters-title { color: #18372d; font-size: 1.65rem; font-weight: 600; margin: 0 0 .55rem; }
+.filters-heading { align-items: baseline; display: flex; justify-content: space-between; margin-bottom: .55rem; }
+.filters-title { color: #18372d; font-size: 1.65rem; font-weight: 600; margin: 0; }
+.filters-toggle { background: none; border: 0; color: #355f49; cursor: pointer; font: 700 .75rem Inter, ui-sans-serif, system-ui, sans-serif; padding: .25rem 0; text-decoration: underline; text-underline-offset: .15em; }
+.filters-toggle:hover { color: #244a38; }
+.filters.is-hidden { display: none; }
 .filters { background: #ebe8d3; border-bottom: 2px solid #355f49; border-radius: .15rem; border-top: 2px solid #355f49; display: grid; gap: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); min-width: 0; padding: 1.25rem; }
 label { color: #40574e; display: grid; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .75rem; font-weight: 700; gap: .35rem; }
 fieldset { border: 0; margin: 0; min-width: 0; padding: 0; }
