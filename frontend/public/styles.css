@@ -16,6 +16,7 @@ a { color: inherit; }
 .maypole-mark img { display: block; height: auto; width: 100%; }
 .hero-copy { display: contents; }
 h1 { grid-column: 2; grid-row: 1; font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: clamp(2.5rem, 5.1vw, 4.5rem); font-weight: 600; letter-spacing: -.055em; line-height: .9; margin: 0; white-space: nowrap; }
+.title-break { display: inline; }
 .intro { color: #40574e; font-size: 1.18rem; font-style: italic; grid-column: 2; grid-row: 2; line-height: 1.5; margin: 0; max-width: 40rem; }
 .disclaimer { color: #6f7469; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .72rem; grid-column: 2; grid-row: 3; line-height: 1.45; margin: 0; }
 .disclaimer a { color: #40574e; text-underline-offset: .16em; }
@@ -170,6 +171,7 @@ h2 a:hover { text-decoration: underline; text-decoration-color: #b24c24; text-un
   .hero { align-items: start; column-gap: .7rem; display: grid; grid-template-columns: 104px minmax(0, 1fr); padding-bottom: 1.5rem; row-gap: .3rem; }
   .maypole-mark { margin: .15rem 0 0; width: 104px; }
   h1 { font-size: clamp(2.05rem, 9vw, 2.35rem); }
+  .title-break { display: block; }
   .intro, .disclaimer { grid-column: 1 / -1; }
   .intro { font-size: 1rem; margin-top: 0; }
   .filters { grid-template-columns: 1fr; }

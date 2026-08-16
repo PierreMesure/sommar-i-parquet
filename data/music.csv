@@ -14611,6 +14611,21 @@ sr_episode_id,track_number,title,artist,composer,lyricist,album,record_label,is_
 2815467,13,Från Hjärtat,"Ison & Fille, Highwon, Aleks","Ison Glasgow, Aleks Manojlovic, Felipe Leiva Wenger, Pablo Leiva Wenger, Marcelo Salazar Campos, H Taha","Ison Glasgow,Aleks Manojlovic,Felipe Leiva Wenger,Pablo Leiva Wenger,Marcelo Salazar Campos,H Taha",För Evigt,Hemmalaget,False
 2815467,14,Ing-Maries Vals,Sara Parkman,"Hampus Norén, Sara Parkman","Hampus Norén,Sara Parkman",,Gå Dit Det Känns,False
 2815467,15,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815468,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815468,2,Thunderstruck,Ac/Dc,"Angus Young, Malcolm Young","Angus Young,Malcolm Young",Thunderstruck,Atco,False
+2815468,3,Dancing On The Ceiling,Lionel Richie,"Michael Frenchik, Carlos Rios, Lionel Richie",Lionel Richie,Dancing On The Ceiling,Motown,False
+2815468,4,Man In The Mirror,Michael Jackson,"Glen Ballard, Siedah Garrett","Glen Ballard,Siedah Garrett",Michael Jackson - The Immortal Album,Epic,False
+2815468,5,Hungry Hearts,Nause,Nause,"Nause,Jeremy Cooper,Jacob Criborn,Daniel Gidlund,Vincent Pontare,Leonard Scheja",Hungry Hearts,Universal Music,False
+2815468,6,Silhouettes,Avicii,"Tim Bergling, Salem Al Fakir","Tim Bergling,Salem Al Fakir",Silhouettes,Universal Music,False
+2815468,7,Dog Days Are Over,Florence & The Machine,"Isabella Summers, Florence Welch","Isabella Summers,Florence Welch",Lungs,Universal Music,False
+2815468,8,My Silver Lining,First Aid Kit,"Johanna Söderberg, Klara Söderberg","Johanna Söderberg,Klara Söderberg",My Silver Lining,Sony,False
+2815468,9,Ride,Lana Del Rey,"Lana Del Rey, Justin Parker","Lana Del Rey,Justin Parker",Ride,Universal Music,False
+2815468,10,Whatever It Takes,Imagine Dragons,"Benjamin Mckee, Daniel Reynolds, Wayne Sermon","Benjamin Mckee,Daniel Reynolds,Wayne Sermon",,Universal,False
+2815468,11,Rise Up,Andra Day,"Andra Day, Jennifer Decilveo","Andra Day,Jennifer Decilveo",,Warner Bros,False
+2815468,12,This Is Me,"Keala Settle, The Greatest Showman Ensemble","Benj Paskek, Justin Paul","Benj Paskek,Justin Paul",,Warner Bros,False
+2815468,13,Life Again,Annika Wickihalder,"Herman Gardarfve, Patrik Jean, Annika Wickihalder","Herman Gardarfve,Patrik Jean,Annika Wickihalder",,Jubel Artist Agency,False
+2815468,14,We On Go Ii (Feat. Denzel Curry),"Bia, A$Ap Ferg, Denzel Curry","Bianca Landrau, Denzel Curry, Darold Brown, Carlton Mays, Thomas Lee Brown, Joel Malka, Simon Jonasson, Anton Göransson, Isabella Sjöstrand, Courtlin Edwards","Bianca Landrau,Denzel Curry,Darold Brown,Carlton Mays,Thomas Lee Brown,Joel Malka,Simon Jonasson,Anton Göransson,Isabella Sjöstrand,Courtlin Edwards",,Epic Records /Epic Legacy/,False
+2815468,15,WE ON GO,BIA,,,WE ON GO,SME,False
 2815469,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
 2815469,2,When I Was A Boy,Jeff Lynne's Elo,Jeff Lynne,Jeff Lynne,When I Was A Boy,Columbia,False
 2815469,3,Rise (Radio Edit),Cornelia Jakobs,"David Zandén, Cornelia Jakobs, Isa Molin","David Zandén,Cornelia Jakobs,Isa Molin",,Warner Music,False
@@ -14993,6 +15008,22 @@ sr_episode_id,track_number,title,artist,composer,lyricist,album,record_label,is_
 2815526,12,Vin,Dubberbois,"Malte Milner Find, Oliver Katzmann Hasselflug, Simon Stenspil, Pelle Højer-Pedersen","Malte Milner Find,Oliver Katzmann Hasselflug,Simon Stenspil,Pelle Højer-Pedersen",,Universal Music A/S,False
 2815526,13,Om Ja' Va' En Slashas,Kal P Dal,Tim Hardin,Kalle Pedal,Till Mossan,Sonet,False
 2815526,14,Låt Bli Att Bli Kär I Mej,"Siw Malmkvist, Harry Arnold",Julian Cannonball Adderley,Peter Himmelstrand,Siwan (1),Metronome,False
+2815527,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815527,2,What A Job,"Devin The Dude, Snoop Doggy Dogg, André 3000","Andre Benjamin, Charles Henderson, Devin Copeland, Calvin Broadus","Andre Benjamin,Charles Henderson,Devin Copeland,Calvin Broadus",,Rap A Lot Records,False
+2815527,3,Who Knows,"Protoje, Chronixx","Oje Ollivierre, Phillip Winta James, Jamar Rolando Mcnaughton","Oje Ollivierre,Phillip Winta James,Jamar Rolando Mcnaughton",,Ineffable Records,False
+2815527,4,California Dreamin',Four Tops,"John Phillips, Michelle Gilliam","John Phillips,Michelle Gilliam",,Motown,False
+2815527,5,God's Gonna Cut You Down,Johnny Cash,Trad Från Usa,Trad Från Usa,American V: A Hundred Highways,American Recordings,False
+2815527,6,This Land Is Your Land,"Sharon Jones, The Dap-Kings",Woody Guthrie,Woody Guthrie,Up In The Air,Rhino Records,False
+2815527,7,Lion In The Jungle,Patoranking,Patrick Okorie,Patrick Okorie,,Empire,False
+2815527,8,The Chase,Lifelike,"Giorgio Moroder, Harold Faltermeier",,,Club Sweat,False
+2815527,9,Helt Okej,Blues,Roberto Martorell,Blues,Samhällstjänst,Stockholm Records,False
+2815527,10,Diamonds From Sierra Leone (Remix),"Kanye West, Jay-Z","Jay-Z, Devon Harris, John Barry, Jon Brion, Don Black","Jay-Z,Devon Harris,John Barry,Jon Brion,Don Black",,Roc-A-Fella,False
+2815527,11,Hard Working Hand,Luke Temple,Luke Temple,Luke Temple,,Secretly Canadian,False
+2815527,12,Mopedbart,Hubbabubbaklubb,Hubbabubbaklubb,Hubbabubbaklubb,,Death Strobe Records,False
+2815527,13,Legalize It,Peter Tosh,Peter Tosh,Peter Tosh,Legalize It,Columbia,False
+2815527,14,Legalize It,Peter Tosh,,,Les Indispensables,Sony Music Media,False
+2815527,15,Heart Of Gold,Charles Bradley,Neil Young,Neil Young,,Daptone Records,False
+2815527,16,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
 2815529,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
 2815529,2,Satan I Gatan,Veronica Maggio,"Veronica Maggio, Christian Walz","Veronica Maggio,Christian Walz",Satan I Gatan,Universal Music,False
 2815529,3,Målet Är Ingenting Vägen Är Allt,Robert Broberg,Robert Broberg,Robert Broberg,Robert Brobergs Höjdare,Robert Broberg,False
@@ -15085,6 +15116,134 @@ sr_episode_id,track_number,title,artist,composer,lyricist,album,record_label,is_
 2815536,13,Porcelain,Jonatan Leandoer96,"Jonatan Leandoer Håstad, Mathias Sarsgaard, Frederik Valentin, Fredrik Valentin","Jonatan Leandoer Håstad,Mathias Sarsgaard,Frederik Valentin,Fredrik Valentin",,Year0001,False
 2815536,14,I'll Be Your Mirror,"Velvet Underground, Nico",Lou Reed,Lou Reed,,Polydor,False
 2815536,15,Is That All There Is,"Peggy Lee, Randy Newman","Jerry Leiber, Mike Stoller","Jerry Leiber,Mike Stoller",The Best Of Peggy Lee,Capitol,False
+2815538,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815538,2,Berghain,Rosalía,"Vila Rosalía Tobella, Dylan Wiggins, Noah Goldstein, Björk Gudmundsdottir, Jake Miller",Vila Rosalía Tobella,,Columbia,False
+2815538,3,Das Modell,Kraftwerk,"Karl Bartos, Ralf Hütter","Ralf Hütter,Emil Schult",Die Mensch Maschine,Emi,False
+2815538,4,Deceptacon,Le Tigre,Le Tigre,Le Tigre,Le Tigre,Wiiija,False
+2815538,5,Welcome,"Harmonia, Eno 76'","Brian Eno, Michael Rother, Moebius, Roedelius",,,Grönland,False
+2815538,6,Fembot,Robyn,Klas Åhlund,"Klas Åhlund,Robyn Carlsson",Fembot,Konichiwa Records,False
+2815538,7,God dag Gösta,Philemon Arthur and the Dung,,,Musikens historia del I och II,Silence Records,False
+2815538,8,Goddag Gösta,Philemon Arthur & The Dung,Philemon Arthur,Philemon Arthur,Musikens Historia Del 1 & 2,Silence,False
+2815538,9,These Days,Nico,Jackson Browne,Jackson Browne,The Royal Tenenbaums,Hollywood Records,False
+2815538,10,Something On Your Mind,Karen Dalton,D Valenti,D Valenti,In My Own Time,Light In The Attic Records,False
+2815538,11,A Place In The Sun,Marine Girls,Tracey Thorn,Tracey Thorn,Lazy Ways / Beach Party,Cherry Red,False
+2815538,12,Benny Hill Theme,The Edwin Davids Jazz Band,"Boots Randolph, James Rich",,,Playtime,False
+2815538,13,Famous Sounds,Julian Sotelo,,,Famous Sounds,Julian Sotelo,False
+2815538,14,Mixtureteam,V.A,,,Mixtureteam,,False
+2815538,15,Army Of Me,Björk Gudmundsdottir,"Björk Gudmundsdottir, Graham Massey","Björk Gudmundsdottir,Graham Massey",Army Of Me,Mother,False
+2815538,16,See You All,Koudlam,Gwenhael Navarro,Gwenhael Navarro,,Pan European Recording,False
+2815538,17,Futura Free,Frank Ocean,Christopher Breaux,Christopher Breaux,Blonde,Boys Don't Cry,False
+2815538,18,Hentai,Rosalia,"Rosalia Vila Tobella, Pharrell Williams, Jacob Sherman, Chad Hugo, Larry Gold, Michael Uzowuru, Noah Goldstein, Dylan Wiggins, David Rodriguez","Rosalia Vila Tobella,Pharrell Williams,Jacob Sherman,Chad Hugo,Larry Gold,Michael Uzowuru,Noah Goldstein,Dylan Wiggins,David Rodriguez",,Sony Music,False
+2815538,19,Rock the Night,"Mira Eklund, Stefan Johansson",Joey Tempest,,,,False
+2815539,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815539,2,Mission: Impossible Theme,Michael Giacchino,Lalo Schifrin,,,Varese Sarabande,False
+2815539,3,Extreme Ways,Moby,Moby,Moby,Extreme Ways,Playground,False
+2815539,4,Nobahari,Mohsen Namjoo,Mohsen Namjoo,Mohsen Namjoo,,Daf Daf Production,False
+2815539,5,Baraye (Woman Life Freedom),Shervin Hajipour,"Shervin Hajipour, Kianoush Yazdanyar",Shervin Hajipour,,,False
+2815539,6,Islands,The Xx,The Xx,The Xx,Islands,Xl-Recordings,False
+2815539,7,Carry On,Janne Schra,"Janne Schra, N Gabrielsson","Janne Schra,N Gabrielsson",,Disco:Wax,False
+2815539,8,Dirt Off Your Shoulder,Jay-Z,"Shawn Carter, Tim Mosley","Shawn Carter,Tim Mosley",The Black Album,Roc-A-Fella,False
+2815539,9,Also Sprach Zarathustra (Op 30): Inledning,"Karl Böhm, Berliner Philharmoniker",Richard Strauss,,2001 - A Space Odyssey,Columbia,False
+2815539,10,"Also Sprach Zarathustra, Op. 30 I. Einleitung (Introduction aka 2001 A Space Odyssey Opening Title Music)",The Vienna Philharmonic Orchestra conducted by Herbert von Karajan,,,"Richard Strauss: Also Sprach Zarathustra, Op. 30 (Remastered)",Harrison James Music,False
+2815539,11,Man In The Long Black Coat,Bob Dylan,Bob Dylan,Bob Dylan,Oh Mercy,Columbia,False
+2815539,12,Cool Thing,Sonic Youth,Sonic Youth,Sonic Youth,Goo,Geffen,False
+2815539,13,Some Of Us Are Brave,Danielle Ponder,"Danielle Ponder, Avis Reese, Ed Quinn","Danielle Ponder,Avis Reese,Ed Quinn",,Future Classic,False
+2815539,14,No War,Gizmo Varillas,Gizmo Varillas,Gizmo Varillas,,Big Lake Music,False
+2815539,15,Girl On Fire,Alicia Keys,"Jeff Bhasker, Alicia Keys, Salaam Remi, Billy Squier","Jeff Bhasker,Alicia Keys,Salaam Remi,Billy Squier",Girl On Fire,Sony,False
+2815539,16,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815541,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815541,2,Public Service Announcement,Jay-Z,"Shawn Carter, J Smith","Shawn Carter,J Smith",The Black Album,Roc-A-Fella,False
+2815541,3,I Wonder,Kanye West,Kanye West,Kanye West,Graduation,Roc-A-Fella,False
+2815541,4,My Song,Labi Siffre,,,Crying Laughing Loving Lying,Edsel,False
+2815541,5,So Much Trouble In The World,"Bob Marley, The Wailers (Jamaica), I-Threes",Bob Marley,Bob Marley,Natural Mystic - The Legend Lives On,Tuff Gong,False
+2815541,6,Ella Baila Sola,Eslabon Armado,Pedro Julian Tovar,Pedro Julian Tovar,,Del Records,False
+2815541,7,Elevation,U2,U2,Bono,Elevation,Island,False
+2815541,8,Take A Chance On Me,Abba,"Benny Andersson, Björn Ulvaeus","Benny Andersson,Björn Ulvaeus",Abba Gold,Polydor,False
+2815541,9,Misty Morning,"Bob Marley, I-Threes, The Wailers (Jamaica)",Bob Marley,Bob Marley,Kaya,Island,False
+2815541,10,What You Won't Do For Love,Bobby Caldwell,"Bobby Caldwell, Alfons Kettner","Bobby Caldwell,Alfons Kettner",Best Of Tk (1),Emi,False
+2815541,11,The Boy Who Played The Harp,Dave,"David Omoregie, Fraser T Smith","David Omoregie,Fraser T Smith",,Neighbourhood Recordings,False
+2815541,12,Mitt Sår,Georg Jojje Wadenius,Georg Jojje Wadenius,Barbro Lindgren,Barnkammarboken (5),Bonnier Music,False
+2815541,13,Stäcka,Yasin,Hasti B,Yasin Mahamoud,,Sony Music,False
+2815541,14,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815542,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815542,2,Circle,Edie Brickell,"Edie Brickell, Kenny Withrow",Edie Brickell,Shooting Rubberbands At The Stars,Geffen,False
+2815542,3,Malmö Stad (Tv Version),Familjen,"Johan T Karlsson, Max Gunnar Sjödin","Johan T Karlsson,Max Gunnar Sjödin",,Karlssons Musikkontor,False
+2815542,4,We Are The Young Ones,Bakvikens Orkester,Anders Öhman,Anders Öhman,,Warner Music,False
+2815542,5,See You Again,"Wiz Khalifa, Charlie Puth",Okänd,Okänd,See You Again,Universal Music,False
+2815542,6,Inte Stor Nog,Timbuktu,"Måns Asplund, Georg Riedel",Jason Diakité,Inte Stor Nog,Emi,False
+2815542,7,Head Over Heels,"Tears For Fears, Andy Davis, Sandy Mclelland, Annie Mccaig, Marilyn Davis","Roland Orzabal, Curt Smith","Roland Orzabal,Curt Smith",Songs From The Big Chair,Mercury,False
+2815542,8,Never Be The Same Again,"Mel C, Left Eye","Chisholm Melanie, Paul F Cruz, Rhett Lawrence, Lisa Lopes, Lorenzo Martin","Chisholm Melanie,Paul F Cruz,Rhett Lawrence,Lisa Lopes,Lorenzo Martin",Never Be The Same Again,Virgin,False
+2815542,9,Heathens,Twenty One Pilots,Twenty One Pilots,Twenty One Pilots,,Warner Bros,False
+2815542,10,Suspirium,Thom Yorke,Thom Yorke,Thom Yorke,,Xl-Recordings,False
+2815542,11,Livet I 8-Bitar / J,K-Pist,"Kärnebro Markus, Anders Lind, Elias Warg","Kärnebro Markus,Anders Lind,Elias Warg",,,False
+2815542,12,Teenage Crime,Adrian Lux,"Adrian Hynne, Linnea Martinsson","Adrian Hynne,Roger Hynne",Teenage Crime,La Vida Locash,False
+2815542,13,Don't Cry For Louie,Vaya Con Dios,"Dani Schoovaerts, Dirk Schoufs","Dani Schoovaerts,Dirk Schoufs",,Ariola,False
+2815542,14,Stay,"Rihanna, Mikky Ekko","Mikky Ekko, Elof Loelv, Justin Parker","Mikky Ekko,Elof Loelv,Justin Parker",Unapologetic,Def Jam,False
+2815542,15,Young And Beautiful,Lana Del Rey,"Lana Del Rey, Rick Nowels","Lana Del Rey,Rick Nowels",The Great Gatsby,Interscope,False
+2815543,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815543,2,I Just Want To Make Love To You,Etta James,Willie Dixon,Willie Dixon,I Just Want To Make Love To You,Mca,False
+2815543,3,Etyd För Piano Op 76:2 (Arr),"Jian Wang, Göran Söllscher",Jean Sibelius,,Reverie,Dgg,False
+2815543,4,"Konsert För 4 Klaverinstrument & Stråkorkester Med Bc Bwv 1065 a-moll: Sats 3, Allegro","David Fray, Emmanuel Christien, Audrey Vigoureux, Jacques Rouvier, Orkester",Johann Sebastian Bach,,,Warner Music,False
+2815543,5,L'air,Walter Astral,"Tino Gelli, Tristan Thomas","Tino Gelli,Tristan Thomas",,Abbess Records,False
+2815543,6,Lewis Takes Action,"Owen Pallett, John Marshman, Jeremy Gara, Ed Reifel",Owen Pallett,Owen Pallett,Heartland,Domino,False
+2815543,7,Learn Your Lesson (Photay Remix),"Madison Mcferrin, Photay","Madison Mcferrin, Evan Shornstein","Madison Mcferrin,Evan Shornstein",,Madmcferrin Music,False
+2815543,8,Work,"Honey Dijon, Dave Giles Ii, Cor.Ece, Mike Dunn","Cor.Ece, Dave Giles Ii, Honey Dijon, Mike Dunn","Cor.Ece,Dave Giles Ii,Honey Dijon,Mike Dunn",,Classic Music Company,False
+2815543,9,German Fields,"Olöf Arnalds, Skuli Sverrisson, Magnus Trygvason Eliassen",Olöf Arnalds,Olöf Arnalds,Sudden Elevation,One Little Indian,False
+2815543,10,Jamelia,Caribou,Dan Snaith,Dan Snaith,Swim,City Slang,False
+2815543,11,The Plum Blossom,"Yusef Lateef, Barry Harris, Ernie Farrow, Lex Humphries",Yusef Lateef,,Eastern Sounds,Prestige,False
+2815543,12,Same Boat,"Zak Abel, Sheku Kanneh-Mason","Sheku Kanneh-Mason, Zak Abel","Sheku Kanneh-Mason,Zak Abel",,Decca,False
+2815543,13,The Universe Is Basically Playful,"Mikael Karlsson, Alan Watts","Mikael Karlsson, Alan Watts","Mikael Karlsson,Alan Watts",,Bel Air,False
+2815543,14,Konsert För Piano & Orkester Op 102 F-dur,"Dmitrij (2) Sjostakovitj, Maksim Sjostakovitj, I Musici De Montreal",Dmitrij Sjostakovitj,,Konsert För Piano Nr 1,Chandos,False
+2815544,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815544,2,"Vivaldi: Concerto In E Major ""La primavera"", Op. 8, No. 1, RV 269 - 1. Allegro",Daniel Hope,,,For Seasons,Deutsche Grammophon (DG),False
+2815544,3,Chim Chim Cher-Ee,"Julie Andrews, Dick (1) Van Dyke, Karen Dotrice, Matthew Garber, Irwin Kostal","Richard M Sherman, Robert B Sherman","Richard M Sherman,Robert B Sherman",Academy Award Winning Songs 1934-1993 (3),Rhino,False
+2815544,4,Ikuinen Rakkaus,Börje Lampenius,Fred Karger,Kullervo,,Melody (1950-Talet),False
+2815544,5,Salut D'amour (Op 12 Version För Orkester),"Gil Shaham, Orpheus Chamber Orchestra (New York)",Edward Elgar,,Violin Romances,Dgg,False
+2815544,6,Night Fever,Bee Gees,"Barry Gibb, Maurice Gibb, Robin Gibb","Barry Gibb,Maurice Gibb,Robin Gibb",The Very Best Of The Bee Gees,Polydor,False
+2815544,7,Moviestar,Harpo,Harpo,Harpo,Moviestar,Emi,False
+2815544,8,Roar,Katy Perry,"Max Martin, Katy Perry, Lukasz",Bonnie Mckee,Roar,Universal Music,False
+2815544,9,9 To 5,Dolly Parton,Dolly Parton,Dolly Parton,Dolly (4),Rca,False
+2815544,10,I've Gotta Be Me,Sammy (2) Davis,Walter Marks,Walter Marks,I've Gotta Be Me,Reprise,False
+2815544,11,Diamonds Are A Girl's Best Friend,"Marilyn Monroe, Lionel Newman",Jule Styne,Leo Robin,Goodbye Primadonna,Grand Prix,False
+2815544,12,"String Quartet No. 14 in D Minor, D. 810 ""Death and the Maiden"": II. Andante con moto",Britten Quartet,,,"Schubert: String Quartets Nos. 10 & 14 ""Death and the Maiden""",Warner Classics,False
+2815544,13,Stråkkvartett Nr 14 d-moll D 810,Britten Quartet,Franz Schubert,,Death And The Maiden,Warner Music,False
+2815544,14,Feel,Robbie Williams,"Guy Chambers, Robbie Williams","Guy Chambers,Robbie Williams",Feel,Chrysalis,False
+2815544,15,Hope (Lahden Kirkko),Linda Lampenius & Perttu Kivilaakso,"Linda Lampenius, Perttu Kivilaakso","Linda Lampenius,Perttu Kivilaakso",,Sverige Missing Label,False
+2815544,16,Finlandia (Op 26),"Okko Kamu, Helsingfors Stadsorkester",Jean Sibelius,,,Finlandia,False
+2815545,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815545,2,Eto Bylo V Rossii,Monetochka,"Elizaveta Andreevna Gyrdymova, Vitja Isajev","Elizaveta Andreevna Gyrdymova,Vitja Isajev",,M2,False
+2815545,3,Break My Soul,Beyoncé,"Jason White, Big Freedia, Adam James Pigott, Fred Mcfarlane, Allen George, S Carter, Christopher Stewart, Terius Nash, Beyoncé Knowles","Jason White,Big Freedia,Adam James Pigott,Fred Mcfarlane,Allen George,S Carter,Christopher Stewart,Terius Nash,Beyoncé Knowles",,Sony Music,False
+2815545,4,Svansjön: Orkestersvit (Op 20A),"Christian Lindberg, Arctic Philharmonic Symphony Orchestra (Bodö & Tromsö)",Peter Tjajkovskij,,Symphony 5 | Swan Lake Suite,Bis,False
+2815545,5,Khochu Peremen,Kino,Viktor Tsoj,Viktor Tsoj,,,False
+2815545,6,Wind Of Change,Scorpions (Ty),Klaus Meine,Klaus Meine,Wind Of Change,Mercury,False
+2815545,7,Wind Of Change (Russian English Version),Scorpions,,,Send Me An Angel/Wind Of Change,Vertigo ，Polygram,False
+2815545,8,On Ne Vernulsja Iz Boja,Vladimir Vysotskij,Vladimir Vysotskij,Vladimir Vysotskij,,Moroz Records,False
+2815545,9,Sol's Song,"Trygve Seim, Kristjan Randalu, Mats Eilertsen, Markku Ounaskari",Trygve Seim,,,Ecm,False
+2815545,10,Akhmatova Requiem: Sats 7,"Phyllis Bryn-Julson, Gennadij Rozjdestvenskij, Bbc Symphony Orchestra (London)",John Tavener,Anna Achmatova,,Nmc Recordings,False
+2815545,11,Something Unspoken Blue And Tender,"Elene Gvritishvili, Alexey Pudinov",Valentyn Sylvestrov,Sergej Jesenin,,Kaleidos Musikeditionen,False
+2815545,12,Konsert För Piano & Orkester Nr 2 c-moll Op 18,"Valentina Lisitsa, Michael Francis, London Symphony Orchestra",Sergej Rachmaninov,,The Three Piano Concertos | Paganini Rhapsody (2:2),Decca,False
+2815545,13,"Rachmaninov: Piano Concerto No.2 in C minor, Op.18 - 1. Moderato",London Symphony Orchestra,,,"Rachmaninov: The Piano Concertos, Paganini Rhapsody",Universal Music Ireland Ltd.,False
+2815545,14,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815546,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815546,2,The Penguin,Raymond Scott Quintet,Raymond Scott,,,Columbia,False
+2815546,3,Häävalssi,Kaustisen Purppuripelimannit,Friiti Ojala,,Häämarssit Ja Kauneimmat Häävalssit,Finnlevy,False
+2815546,4,Petite Fleur,"Sidney Bechet, Claude Luter",Sidney Bechet,,Platinum For Sidney Bechet,Vogue,False
+2815546,5,Twist And Shout,The Beatles,"Phil Medley, Bert Russell","Phil Medley,Bert Russell",The Early Beatles,Capitol,False
+2815546,6,Daddy's Gone,Zoran Milosevic,Trad,,Chat Noir Chat Blanc,Barclay,False
+2815546,7,Odlazi Nam Deda,Dejan Sparavalo,,,"Muzika Iz Filma ""Crna Macka Beli Macor""",Komuna (via Film Danas),False
+2815546,8,Änglamark,"Sven-Bertil Taube, Ulf Björlin, Stockholms Barockensemble",Evert Taube,Evert Taube,Sven-Bertil Taube Sjunger Evert Taube (2),Hmv,False
+2815546,9,Änglamark,Sven-Bertil Taube,,,Big-5 : Sven-Bertil Taube,Parlophone Sweden,False
+2815546,10,Underbart Är Kort,"Povel Ramel, Allan (1) Johansson",Povel Ramel,Povel Ramel,Ramels Klassiker (2),Knäppupp,False
+2815546,11,Idolen Calle Ryhdal Sjungande Qvinna Med Stora Q Henrietta & Tjipp Tjillevipp,"Martin Ljung, Povel Ramel, Allan (1) Johansson, Spectacleorkestern",Povel Ramel,Povel Ramel,Knäppupplevelser 1952-1968,Knäppupp,False
+2815546,12,Här försöker man vara rolig men alla skrattar ändå bara åt en,Torbjörn Grass,Torbjörn Grass,,,,False
+2815546,13,Fy Fan,Theatre Slava,Okänd,Okänd,Döderskratt,Tonsalen Production,False
+2815546,14,Fy fan,Teater Sláva,,,Döderskratt,Teater Sláva,False
+2815546,15,A Nonsense Song,Charles Chaplin,Léo Daniderff,Charles Chaplin,City Lights,Disconforme Sl,False
+2815546,16,Yes We Have No Bananas,"The Pied Pipers (Usa), Paul Weston","Frank Silver, Irving Cohn","Frank Silver,Irving Cohn",,Vintage Masters,False
+2815546,17,I Got A Woman,Ray Charles,Ray Charles,Ray Charles,Ray Charles - Berlin 1962,Pablo,False
+2815546,18,Mr Harris,Independent Orchestra,"Dennis Egberth, Anders Af Klintberg",,,Independent Orchestra,False
+2815546,19,Fars Polska,Olle Af Klintberg,Olle Af Klintberg,,,8365053 Records DK,False
+2815546,20,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
 2815547,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
 2815547,2,Blinded By Your Grace,The Kingdom Choir,"Fraser Thorneycroft-Smith, Michael Omari, Uzoechi Emenike","Fraser Thorneycroft-Smith,Michael Omari,Uzoechi Emenike",,Sony,False
 2815547,3,Candy,Mk.Gee,Michael Gordon,Michael Gordon,,R&R Digital,False
@@ -15121,3 +15280,53 @@ sr_episode_id,track_number,title,artist,composer,lyricist,album,record_label,is_
 2815548,13,No Church In The Wild,"Jay-Z, Kanye West, Frank Ocean","Shawn Carter, Mike Dean, Terus Nash, Charles Njapa, Frank Ocean, Kanye West","Shawn Carter,Mike Dean,Terus Nash,Charles Njapa,Frank Ocean,Kanye West",The Great Gatsby,Interscope,False
 2815548,14,Tusk,"Fleetwood Mac, Usc Trojan Marching Band",Lindsey Buckingham,Lindsey Buckingham,Tusk,Warner Bros,False
 2815548,15,Haenim,Kim Jung Mi,Okänd,Okänd,,Lion,False
+2815549,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815549,2,Kemisten,De Undermedvetna,,,Kvantitet före kvalitet,1720143 Records DK,False
+2815549,3,Lo Que Le Pasó A Hawaii,Bad Bunny,Benito Antonio Martinez Ocasio,Benito Antonio Martinez Ocasio,,Rimas Entertainment,False
+2815549,4,Den Blomstertid Nu Kommer - Interlude,Darin,Trad Från Sverige,"Israel Kolmodin,Britt G Hallqvist",,Universal Music,False
+2815549,5,Födelsedagsvals Till Mona,"Benny Andersson, Mats Nörklit, Orsa Spelmän","Benny Andersson, Björn Ulvaeus",,"Flickor, Flickor, Flickor",Mnw,False
+2815549,6,Chaharmezrab Shur,Karim Ebrahimi,Karim Ebrahimi,Karim Ebrahimi,,Iran Missing Label,False
+2815549,7,What A Wonderful World,Sam Cooke,"Lou Adler, Herb Alpert, Sam Cooke","Lou Adler,Herb Alpert,Sam Cooke",The Man Who Invented Soul,Rca,False
+2815549,8,Hello Muddah Hello Faddah,Allan Sherman,"Lou Busch, Allan Sherman","Lou Busch,Allan Sherman",My Son The Greatest,Rhino Records,False
+2815549,9,Jag Ger Dig Min Morgon,Fred Åkerström,Tom Paxton,Fred Åkerström,Metronomeklassiker,Metronome,False
+2815549,10,War,"The E Street Band, Bruce Springsteen","Barrett Strong, Norman Whitfield","Barrett Strong,Norman Whitfield",Bruce Springsteen & The E Street Band Live 1975-85,Columbia,False
+2815549,11,Sång Till Friheten,Björn Afzelius,Silvio Rodriguez,Björn Afzelius,Björn Afzelius Bästa ( 1),Rebelle,False
+2815549,12,Freedom,"Beyoncé, Kendrick Lamar","Jonathan Coffer, Carla Maria Williams, Frank Tirado, Gregory Dean Mcintosh, John Lomax, Alan Lomax, Kendrick Duckworth, Beyoncé Knowles","Jonathan Coffer,Carla Maria Williams,Frank Tirado,Gregory Dean Mcintosh,John Lomax,Alan Lomax,Kendrick Duckworth,Beyoncé Knowles",Lemonade,Sony Bmg Music Entertainment,False
+2815549,13,Nasimi - Between Two Seas,Sami Yusuf,"Sami Yusuf, Imadaddin Nasimi","Sami Yusuf,Imadaddin Nasimi",,Andante Records,False
+2815549,14,Gaudeamus Igitur,"Rasmus Krigström, A Scalpella",Trad Från Tyskland,Trad Från Tyskland,In The Rain,A Scalpella,False
+2815549,15,Ghande Mani,Mohsen Chavoshi,Mohsen Chavoshi,Mohsen Chavoshi,,Yaletown Technologies Inc.,False
+2815549,16,Iran,"Saaren, Arman Miladi",Sara Khoshshans,Sara Khoshshans,,Saaren,False
+2815549,17,Our Roots Run Deep,Dominique Fils-Aimé,Dominique Fils-Aimé,Dominique Fils-Aimé,,Ensoul Records,False
+2815549,18,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815550,1,Sommar Sommar Sommar,Sveriges Radios Symfoniorkester (Stockholm),Sten Carlberg,,Sommar Sommar Sommar,,True
+2815550,2,Born This Way,Lady Gaga,Stefani Germanotta,Stefani Germanotta,Born This Way,Interscope,False
+2815550,3,För Första Gången Nå'nsin,"Annika Herlitz, Mimmi Sandén","Kristen Anderson-Lopez, Robert Lopez",Okänd,För Första Gången Nå'nsin,Walt Disney,False
+2815550,4,Break My Stride,Matthew Wilder,"Greg Prestopino, Matthew Wilder","Greg Prestopino,Matthew Wilder",Lost And Found 1979-1987 (2),Emi,False
+2815550,5,Run The World (Girls),Beyoncé Knowles,"Beyoncé Knowles, Terius Nash, Adidja Palmer, Nick Van De Wall","Beyoncé Knowles,Terius Nash,Adidja Palmer,Nick Van De Wall",Run The World (Girls),Sony,False
+2815550,6,Rid Mig Som En Dalahäst,"Rasmus Gozzi, Fröken Snusk","Rasmus Gozzi, André Zuniga","Rasmus Gozzi,André Zuniga",,Gozzi Records Ab,False
+2815550,7,Prisoner,"Miley Cyrus, Dua Lipa","Jonathan Bellion, Miley Cyrus, Jordan K Johnson, Stefan Johnson, Dua Lipa, Ali Tamposi, Andrew Wotman","Jonathan Bellion,Miley Cyrus,Jordan K Johnson,Stefan Johnson,Dua Lipa,Ali Tamposi,Andrew Wotman",,Sony Music,False
+2815550,8,Easy On Me,Adele,"Greg Kurstin, Adele Adkins","Greg Kurstin,Adele Adkins",,Melted Stone,False
+2815550,9,Half A Man,Dean Lewis,"Dean Lewis, Jon Hume, Hayley Warner","Dean Lewis,Jon Hume,Hayley Warner",,Universal Music,False
+2815550,10,Hold On,Chord Overstreet,"Chord Overstreet , Ian Keaggy","Chord Overstreet ,Ian Keaggy",,Island Records,False
+2815550,11,Where Have You Been,Rihanna,"Esther Dean, Lukasz Gottwald, Robyn Fenty, John Hill, Geoff Mack, H Walter","Esther Dean,Lukasz Gottwald,Robyn Fenty,John Hill,Geoff Mack,H Walter",Talk That Talk,Def Jam,False
+2815550,12,My System,Felicia,"Emily-Madelen Harbakk, Audun  Agnar Guldbrandsen, Julie Bergan, Theresa Rex, Felicia","Emily-Madelen Harbakk,Audun  Agnar Guldbrandsen,Julie Bergan,Theresa Rex,Felicia",,Warner Music,False
+2815550,13,Me Without U,Felicia,"Felicia, Edward Maya, Vika Jigulina, Eirik Gjendemsjö, Ilie Eduard Marian, Niklas Carson Mattson, Corneva Victoria","Felicia,Edward Maya,Vika Jigulina,Eirik Gjendemsjö,Ilie Eduard Marian,Niklas Carson Mattson,Corneva Victoria",,Warner Music,False
+2815550,14,Break Free,"Ariana Grande, Zedd","Savan Kotecha, Max Martin, Anton Zaslavski","Savan Kotecha,Max Martin,Anton Zaslavski",Break Free,Republic Records,False
+2815876,1,Signatur Sommar Sommar Sommar,Radiosymfonikerna,Sten Carlberg,,,,True
+2815876,2,Kemisten,De Undermedvetna,,,Kvantitet före kvalitet,1720143 Records DK,False
+2815876,3,Where You Lead,Carole King,"Carole King, Toni Stern","Carole King,Toni Stern",Tapestry,Epic,False
+2815876,4,Still Crazy After All These Years,"Paul Simon, Michael Brecker, Barry Beckett, David Hood, Roger Hawkins",Paul Simon,Paul Simon,Still Crazy After All These Years,Columbia,False
+2815876,5,Casting Spells,Olive Klug,"Noah Floersch, Olivia Klugman","Noah Floersch,Olivia Klugman",,"Nettwerk Productions /Nettwerk Records, Nettwerk Music Group/",False
+2815876,6,Viola's Theme,"Joel Lyssarides, Jacob Mühlrad",Jacob Mühlrad,,,Universal Music,False
+2815876,7,Natt I En Stad,"Fred Åkerström, Per Olof Gillblad, Wilhelm Lanzky-Otto, Lillebjörn Nilsen, Palle Danielsson",Lillebjörn Nilsen,Fred Åkerström,Två Tungor,Wea,False
+2815876,8,Natt i en stad,Fred Åkerström,,,Natt i en stad,WM Sweden,False
+2815876,9,Corner Of The Sky,James Matthew Thomas,Stephen Schwartz,Stephen Schwartz,,Ghostlight Records,False
+2815876,10,Is There A Way,"Joel Lyssarides, Niklas Fernqvist, Rasmus Blixt",Joel Lyssarides,,,"Act (Act Music + Vision, Act Company)",False
+2815876,11,Her Eyes The Stars,Luchs,Patrik Berg Almkvisth,,,Spinnup,False
+2815876,12,Better Than This,Lizzy Mcalpine,Elizabeth Mcalpine,Elizabeth Mcalpine,,Rca,False
+2815876,13,Livet Är En Cykeltur,Ola Magnell,Ola Magnell,Ola Magnell,Rolös,Viskwa,False
+2815876,14,Is There A Way,"Joel Lyssarides, Niklas Fernqvist, Rasmus Blixt",Joel Lyssarides,,,"Act (Act Music + Vision, Act Company)",False
+2815876,15,I Wanna Get Better,Bleachers,"Jack Antonoff, John Hill","Jack Antonoff,John Hill",I Wanna Get Better,Rca,False
+2815876,16,Viola's Theme,"Joel Lyssarides, Jacob Mühlrad",Jacob Mühlrad,,,Universal Music,False
+2815876,17,Parfum D'étoiles,Ichiko Aoba,Taro Umebayashi,,,Hermine,False
+2815876,18,That's Entertainment,Lady Gaga,Arthur Schwartz,Arthur Schwartz,,Lil Monsters,False
