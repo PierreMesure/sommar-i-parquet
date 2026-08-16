@@ -8,6 +8,8 @@ const topicsUrl = import.meta.env.DEV
   : "https://raw.githubusercontent.com/PierreMesure/sommarpratkompassen/refs/heads/main/data/nlp/topics.json";
 const base = import.meta.env.BASE_URL;
 const assetBase = base.endsWith("/") ? base : `${base}/`;
+const description = "Hitta ditt nya favorit sommarprat och utforska hela arkivet 1959-2026.";
+const socialImage = "https://sommarprat.mesu.re/og-image.png";
 ---
 
 <!doctype html>
@@ -17,11 +19,20 @@ const assetBase = base.endsWith("/") ? base : `${base}/`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="episodes-url" content={episodesUrl} />
     <meta name="topics-url" content={topicsUrl} />
-    <meta
-      name="description"
-      content="Bläddra, sök och filtrera i arkivet för Sommar och Vinter i P1."
-    />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={title} />
+    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:alt" content="Sommarpratkompassen — gröna hörlurar omgivna av sommarblommor" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
     <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href={`${assetBase}favicon.svg`} />
     <link rel="stylesheet" href={`${assetBase}styles.css`} />
   </head>
   <body>
