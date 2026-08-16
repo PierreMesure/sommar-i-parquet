@@ -1,2 +1,1 @@
-"""Sommar i Parquet source package."""
-
+"""Sommarpratkompassen source package."""

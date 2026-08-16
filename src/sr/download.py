@@ -14,7 +14,7 @@ import httpx
 EPISODES_URL = "https://api.sr.se/api/v2/episodes/index"
 MUSIC_URL = "https://api.sr.se/api/v2/playlists/getplaylistbyepisodeid"
 PROGRAM_ID = 2071
-USER_AGENT = "sommar-i-parquet/0.1"
+USER_AGENT = "sommarpratkompassen/0.1"
 
 
 def download_episodes(

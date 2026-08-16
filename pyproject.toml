@@ -1,5 +1,5 @@
 [project]
-name = "sommar-i-parquet"
+name = "sommarpratkompassen"
 version = "0.1.0"
 description = "Fetch the Sommar & Vinter i P1 archive and write it as Parquet"
 readme = "README.md"

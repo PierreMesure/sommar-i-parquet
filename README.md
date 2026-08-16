@@ -1,4 +1,4 @@
-# Sommar i Parquet
+# Sommarpratkompassen
 
 This repository contains script fetching information about the Swedish program *Sommar i P1* (and its younger sibling *Vinter i P1*). The program is also casually called *Sommarprat*.
 

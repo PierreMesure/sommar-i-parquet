@@ -7,7 +7,7 @@ from pathlib import Path
 import httpx
 
 
-USER_AGENT = "sommar-i-parquet/0.1 (https://github.com/PierreMesure/sommar-i-parquet)"
+USER_AGENT = "sommarpratkompassen/0.1 (https://github.com/PierreMesure/sommarpratkompassen)"
 
 
 def download_file(url: str, destination: Path, *, overwrite: bool = False) -> Path:

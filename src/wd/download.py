@@ -15,8 +15,8 @@ import httpx
 
 WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 USER_AGENT = (
-    "sommar-i-parquet/0.1 "
-    "(https://github.com/PierreMesure/sommar-i-parquet)"
+    "sommarpratkompassen/0.1 "
+    "(https://github.com/PierreMesure/sommarpratkompassen)"
 )
 RATE_LIMIT_RETRY_SECONDS = 65
 SPEAKER_METADATA_BATCH_SIZE = 100
