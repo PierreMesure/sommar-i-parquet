@@ -24,6 +24,65 @@ def _model_slug(model_name: str) -> str:
     return f"{readable}-{digest}"
 
 
+def embedding_cache_directory(
+    *,
+    cache_root: Path,
+    cache_name: str,
+    backend: str,
+    model_name: str,
+    prompt_name: str | None,
+    max_length: int,
+) -> Path:
+    """Return the deterministic cache directory without loading the model."""
+    recipe = (
+        f"{backend}::{model_name}::prompt={prompt_name or 'none'}"
+        f"::max_length={max_length}"
+    )
+    return cache_root / _model_slug(recipe) / cache_name
+
+
+def load_matching_cached_embeddings(
+    records: Sequence[dict[str, Any]],
+    *,
+    id_key: str,
+    cache_root: Path,
+    cache_name: str,
+    backend: str,
+    model_name: str,
+    prompt_name: str | None,
+    max_length: int,
+) -> tuple[list[dict[str, Any]], np.ndarray]:
+    """Load the cached subset of records in input order, without model setup."""
+    directory = embedding_cache_directory(
+        cache_root=cache_root,
+        cache_name=cache_name,
+        backend=backend,
+        model_name=model_name,
+        prompt_name=prompt_name,
+        max_length=max_length,
+    )
+    ids_path = directory / "ids.json"
+    embeddings_path = directory / "embeddings.npy"
+    if not ids_path.exists() or not embeddings_path.exists():
+        return [], np.empty((0, 0), dtype=np.float32)
+    cached_ids = list(json.loads(ids_path.read_text(encoding="utf-8")))
+    cached_embeddings = np.load(embeddings_path)
+    if len(cached_ids) != len(cached_embeddings):
+        raise ValueError(f"Corrupt embedding cache in {directory}")
+    cached_index = {record_id: index for index, record_id in enumerate(cached_ids)}
+    matched_records: list[dict[str, Any]] = []
+    matched_vectors: list[np.ndarray] = []
+    for record in records:
+        index = cached_index.get(str(record[id_key]))
+        if index is None:
+            continue
+        matched_records.append(record)
+        matched_vectors.append(cached_embeddings[index])
+    if not matched_vectors:
+        return [], np.empty((0, cached_embeddings.shape[1]), dtype=np.float32)
+    return matched_records, np.asarray(matched_vectors, dtype=np.float32)
+
+
 class EmbeddingEncoder:
     """Load one embedding backend and reuse cached vectors by content ID."""
 
@@ -110,11 +169,14 @@ class EmbeddingEncoder:
         batch_size: int | None = None,
     ) -> np.ndarray:
         """Reuse matching rows and append embeddings for newly seen content IDs."""
-        embedding_recipe = (
-            f"{self.backend}::{self.model_name}::prompt={self.prompt_name or 'none'}"
-            f"::max_length={self.max_length}"
+        directory = embedding_cache_directory(
+            cache_root=cache_root,
+            cache_name=cache_name,
+            backend=self.backend,
+            model_name=self.model_name,
+            prompt_name=self.prompt_name,
+            max_length=self.max_length,
         )
-        directory = cache_root / _model_slug(embedding_recipe) / cache_name
         ids_path = directory / "ids.json"
         embeddings_path = directory / "embeddings.npy"
         directory.mkdir(parents=True, exist_ok=True)

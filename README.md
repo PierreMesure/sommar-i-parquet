@@ -136,12 +136,14 @@ uv run pytest
 ## Static frontend
 
 The `frontend/` directory contains a static Astro browser for the archive. Its
-`public/episodes.json` is a symbolic link to the canonical `data/episodes.json`
-written by `run.py`; run the data pipeline before starting the frontend.
+`public/episodes.json` and `public/topics.json` files are symbolic links to the
+canonical datasets written under `data/`; run the relevant data pipelines
+before starting the frontend.
 
 Filters are divided into episode metadata (when), speaker metadata (who), and
-episode content (what). The first two use the normalized episode and speaker
-records. Content topics and keywords will be added after transcript analysis.
+episode content (what). The topic pipeline adds content filters, an episode map,
+and precomputed related programmes. The archive remains usable when that
+optional topic dataset has not been generated yet.
 
 ```shell
 cd frontend
@@ -152,8 +154,8 @@ npm run dev
 Create deployable static files with `npm run build`; the result is written to
 `frontend/dist/`.
 
-Development uses the local `/episodes.json` symbolic link. Production builds
-fetch the canonical JSON directly from the repository on GitHub.
+Development uses the local JSON symbolic links. Production builds fetch the
+canonical datasets directly from the repository on GitHub.
 
 ## Local transcripts
 
@@ -189,10 +191,44 @@ To transcribe the entire archive sequentially (and safely resume later), run:
 uv run transcribe_all.py
 ```
 
+New transcriptions remove only position-sensitive, high-confidence SR framing
+(for example podcast-version, copyright, SR Play, and music-list notices). The
+original removed segments remain under
+`sommar_i_parquet.removed_introduction_segments`, with detection evidence under
+`removed_introduction_segment_audit`. High-confidence ASR repetition loops are archived
+for one retry; if they recur, the affected segments are retained in metadata and
+removed from the usable transcript.
+
+Audit the existing corpus without changing transcripts:
+
+```sh
+uv run python audit_transcripts.py
+```
+
+The report is written to `data/transcripts/audit-report.json`. After reviewing
+it, apply the same reversible cleanup to existing transcripts with:
+
+```sh
+uv run python audit_transcripts.py --apply
+```
+
+To transcribe only episode IDs listed by an audit or retry manifest, pass a JSON
+file containing an `episodes` array with `episode_id` values:
+
+```sh
+uv run python transcribe_all.py --manifest data/transcripts/retry-manifest.json
+```
+
 ## Transcript topic modelling
 
 `topic_model.py` turns complete transcript JSON files into semantically coherent,
-timestamped chunks and fits an initial BERTopic model. By default it uses the
+timestamped chunks and fits an initial BERTopic model. By default it uses UMAP
+and HDBSCAN to discover dense subjects without choosing a topic count or forcing
+ambiguous chunks into a cluster. These are working groups to review, merge, and
+name — not final editorial tags. Spherical K-means remains available for
+fixed-vocabulary experiments with `--clusterer kmeans --n-topics 80`.
+
+For embeddings it uses the
 Apple-Silicon-native 4-bit MLX conversion of Harrier 270M
 (`majentik/harrier-oss-v1-270m-MLX-4bit`) without an instruction prefix: Harrier
 uses instructions on the query side, whereas transcript units are documents.
@@ -224,6 +260,27 @@ Run the complete available transcript corpus with:
 uv run python topic_model.py
 ```
 
+Tune discovery density when reviewing it:
+
+```sh
+uv run python topic_model.py --min-cluster-size 12 --min-samples 3
+uv run python topic_model.py --min-cluster-size 20 --min-samples 5
+```
+
+To generate readable Swedish labels for the discovered clusters, opt in to
+BERTopic's OpenAI representation model. It selects four representative chunks
+per cluster using c-TF-IDF, diversifies them, and truncates each to 120 actual
+model tokens before sending them to the API. The raw c-TF-IDF keywords remain
+in the output alongside the generated label for review.
+
+```sh
+uv run python topic_model.py --llm-label-model gpt-5.6-luna
+```
+
+This requires `OPENAI_API_KEY` in `.env`. The LLM is instructed to return only
+a 2–6 word Swedish label and uses `reasoning_effort="none"`; it labels clusters
+but does not alter their membership.
+
 For a smaller experiment, or to inspect chaptering before fitting BERTopic:
 
 ```sh
@@ -237,8 +294,67 @@ For the lowest local memory usage, reduce the unit batch size further:
 uv run python topic_model.py --batch-size 4
 ```
 
-Outputs are written under `data/nlp/` and ignored by Git. They include semantic
-chunks, boundary diagnostics, chunk and episode topic assignments, topic
-keywords and examples, a two-dimensional episode map, and cached embeddings.
+Outputs are written under `data/nlp/`. They include semantic chunks, boundary
+diagnostics, chunk and episode topic assignments, topic keywords and examples,
+a two-dimensional episode map, top-eight cosine neighbours in
+`related_episodes.parquet`, and the compact static frontend dataset
+`topics.json`. Similarity and map coordinates come from the original episode
+embedding space, not from browser-side calculations or distances on the 2D map.
 Embedding caches are incremental: newly completed transcripts are added on the
 next run without recomputing unchanged text.
+
+After applying the reviewed topic assignments, rebuild the frontend topic
+payload with:
+
+```sh
+uv run python build_curated_frontend.py
+```
+
+This keeps the curated string topic IDs, Swedish labels, provisional broad
+themes, per-episode coverage, and the existing map/related-episode data in the
+same compact `topics.json` consumed by the static site.
+
+### Controlled editorial topics
+
+The unsupervised clusters are discovery material. The reviewed leaf taxonomy in
+`SPECIFIC_TOPICS_PROPOSAL.md` is assigned separately by `curated_topics.py`.
+Harrier embeds transcript chunks as documents and the Swedish topic definitions
+as `sts_query` queries, preserving the model's asymmetric retrieval setup.
+
+```sh
+uv run python curated_topics.py --batch-size 16 --mlx-cache-limit-mb 1024
+```
+
+Assignment is precision-first and deterministic once the embeddings and
+thresholds are fixed:
+
+- a strong chunk match must clear the topic floor and normally lead its
+  runner-up by a minimum margin;
+- a borderline match below 0.515 cannot establish an episode tag on its own;
+- a very strong match can survive overlap between two related leaf topics;
+- weaker supporting matches only establish an episode tag when they recur in
+  multiple chunks and cover a meaningful portion of the episode;
+- negative near-miss examples are embedded for auditing but are not automatic
+  vetoes, because closely worded exclusions can also resemble valid passages;
+- unmatched chunks remain unmatched instead of being forced into the taxonomy.
+
+The controlled outputs live under `data/nlp/curated/`:
+
+- `topics.parquet`: stable topic IDs, labels, definitions and examples;
+- `chunk_topics.parquet`: accepted strong and supporting evidence;
+- `chunk_topic_decisions.parquet`: the winner, runner-up, thresholds and
+  rejection reason for every chunk;
+- `episode_topics.parquet`: recurring/strong evidence aggregated per episode;
+- `topic_calibration_samples.parquet`: score-stratified examples for reviewing
+  all topic boundaries.
+
+Reviewed per-topic floors can be placed in
+`data/nlp/curated/topic_thresholds.json`; the assignment command loads that file
+automatically. `calibrate_curated_topics.py` can prepare those thresholds with
+Luna, but it sends the sampled transcript excerpts to the configured OpenAI API
+and should therefore only be run as an explicit opt-in:
+
+```sh
+uv run python calibrate_curated_topics.py
+uv run python curated_topics.py
+```

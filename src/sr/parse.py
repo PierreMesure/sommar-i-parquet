@@ -126,6 +126,18 @@ def _program_type(month: int, title: str, summary: str) -> str | None:
     return None
 
 
+def _season_year(published: datetime, program_type: str | None) -> int:
+    """Return the programme season year, distinct from the exact air date.
+
+    A Vinter season starts in December and continues into January.  Its January
+    broadcasts therefore belong to the preceding year's season (VT25/26 is
+    stored as ``year=2025`` throughout).
+    """
+    if program_type == "Vinter" and published.month == 1:
+        return published.year - 1
+    return published.year
+
+
 def _audio(episode: dict[str, Any]) -> dict[str, Any]:
     return episode.get("downloadpodfile") or episode.get("listenpodfile") or {}
 
@@ -155,6 +167,7 @@ def parse_episode(episode: dict[str, Any]) -> dict[str, Any]:
     duration_seconds = audio.get("duration")
     title = episode.get("title", "")
     summary = episode.get("description") or ""
+    program_type = _program_type(published.month, title, summary)
 
     return {
         "sr_episode_id": int(episode["id"]),
@@ -162,8 +175,8 @@ def parse_episode(episode: dict[str, Any]) -> dict[str, Any]:
         "source_title": title,
         "speaker": _speaker_from_title(title, published.year),
         "date": published.date().isoformat(),
-        "year": published.year,
-        "program_type": _program_type(published.month, title, summary),
+        "year": _season_year(published, program_type),
+        "program_type": program_type,
         "episode_url": episode.get("url"),
         "mp3_url": audio.get("url"),
         "length_seconds": int(duration_seconds) if duration_seconds is not None else None,

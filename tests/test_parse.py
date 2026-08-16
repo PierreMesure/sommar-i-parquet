@@ -68,6 +68,23 @@ def test_parse_iso_date_and_missing_audio() -> None:
     assert exclusion_reason(parsed) == "missing_audio"
 
 
+def test_january_vinter_episode_uses_the_previous_season_year() -> None:
+    raw = {
+        "id": 2,
+        "title": "Example Speaker",
+        "description": None,
+        "url": "https://example.test/episode",
+        "publishdateutc": "2026-01-01T12:00:00Z",
+        "downloadpodfile": {"duration": 3600, "url": "https://example.test/audio.mp3"},
+    }
+
+    parsed = parse_episode(raw)
+
+    assert parsed["date"] == "2026-01-01"
+    assert parsed["year"] == 2025
+    assert parsed["program_type"] == "Vinter"
+
+
 def test_speaker_rows_split_co_credited_people_and_known_exceptions() -> None:
     speakers = parse_speakers(
         [

@@ -27,3 +27,7 @@ A JSON object will be returned: {"status":"OK","batch_id":ID_OF_THE_NEW_BATCH} (
 ## Dependency versions
 
 Whether Python or NPM, please avoid adding stale versions of the required dependencies. Check with `uv` or `npm` regularly to make sure we use the latest versions.
+
+## Don't use nohup
+
+Your sandbox doesn't let you.

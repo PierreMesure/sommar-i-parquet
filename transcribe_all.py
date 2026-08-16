@@ -16,6 +16,11 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 from src.whisper.download import download_file, download_huggingface_model
+from src.whisper.quality import (
+    quarantine_transcript,
+    strip_artifacts,
+    transcript_artifacts,
+)
 from src.whisper.transcribe import WhisperMLXSession
 from transcribe import (
     DEFAULT_ALIGNMENT_MODEL_DIR,
@@ -33,6 +38,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=10,
         help="Restart the WhisperMLX worker after this many episodes (default: 10).",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        help="Optional JSON manifest with an episodes list containing episode_id values.",
     )
     # These options are used by the parent process to launch bounded workers.
     parser.add_argument("--worker-start", type=int, help=argparse.SUPPRESS)
@@ -52,6 +62,11 @@ def run_worker(episodes: list[dict], start: int, end: int) -> None:
     )
 
     total = len(episodes)
+    faulty_dir = DEFAULT_TRANSCRIPTS_DIR / "faulty"
+    retrying_episode_ids = {
+        path.stem.split("-", maxsplit=1)[0]
+        for path in faulty_dir.rglob("*.json")
+    } if faulty_dir.exists() else set()
     for index, episode in enumerate(episodes[start:end], start=start + 1):
         episode_id = episode["sr_episode_id"]
         print(f"[{index}/{total}] Episode {episode_id}", flush=True)
@@ -64,7 +79,7 @@ def run_worker(episodes: list[dict], start: int, end: int) -> None:
         download_file(episode["mp3_url"], audio_path)
         print(f"INFO Transcribing {episode.get('source_title', episode_id)}", flush=True)
         transcript = session.transcribe(audio_path)
-        transcript["sommar_i_parquet"] = {
+        transcript.setdefault("sommar_i_parquet", {}).update({
             "audio_path": str(audio_path),
             "engine": "whispermlx (reused MLX ASR + Silero VAD)",
             "model_path": str(model_path),
@@ -72,11 +87,25 @@ def run_worker(episodes: list[dict], start: int, end: int) -> None:
             "episode_url": episode.get("episode_url"),
             "mp3_url": episode.get("mp3_url"),
             "source_title": episode.get("source_title"),
-        }
+        })
+        artifacts = transcript_artifacts(transcript)
+        if artifacts:
+            transcript["sommar_i_parquet"]["artifacts"] = artifacts
+            if str(episode_id) in retrying_episode_ids:
+                strip_artifacts(transcript, artifacts)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("w", encoding="utf-8") as output:
             json.dump(transcript, output, ensure_ascii=False, indent=2)
             output.write("\n")
+        if artifacts and str(episode_id) not in retrying_episode_ids:
+            faulty_path = quarantine_transcript(output_path, artifacts)
+            print(f"WARNING Archived faulty transcript at {faulty_path}", flush=True)
+        elif artifacts:
+            print(
+                "WARNING Retried transcript still contained artifacts; "
+                "removed and retained them in metadata",
+                flush=True,
+            )
 
 
 def main() -> None:
@@ -85,6 +114,16 @@ def main() -> None:
         raise ValueError("--episodes-per-worker must be positive.")
 
     episodes = pq.read_table(args.episodes_path).to_pylist()
+    if args.manifest is not None:
+        manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        episode_ids = {int(row["episode_id"]) for row in manifest["episodes"]}
+        episodes = [
+            episode
+            for episode in episodes
+            if int(episode["sr_episode_id"]) in episode_ids
+        ]
+        if len(episodes) != len(episode_ids):
+            raise ValueError("Manifest contains episode IDs absent from the episode table.")
     total = len(episodes)
     if args.worker_start is not None or args.worker_end is not None:
         if args.worker_start is None or args.worker_end is None:
@@ -118,6 +157,7 @@ def main() -> None:
                 str(args.episodes_path),
                 "--episodes-per-worker",
                 str(args.episodes_per_worker),
+                *(["--manifest", str(args.manifest)] if args.manifest is not None else []),
                 "--worker-start",
                 str(start),
                 "--worker-end",

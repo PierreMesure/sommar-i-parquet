@@ -13,6 +13,7 @@ from src.nlp.embeddings import (
     DEFAULT_EMBEDDING_PROMPT,
     DEFAULT_EMBEDDING_BACKEND,
     EmbeddingEncoder,
+    load_matching_cached_embeddings,
 )
 from src.nlp.segment import segment_transcript
 from src.nlp.topics import fit_topics, write_parquet_rows, write_topic_outputs
@@ -24,6 +25,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transcripts-dir", type=Path, default=Path("data/transcripts"))
     parser.add_argument("--episodes-path", type=Path, default=Path("data/episodes.parquet"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/nlp"))
+    parser.add_argument(
+        "--embedding-cache-dir",
+        type=Path,
+        default=None,
+        help="Reuse an existing embedding cache instead of storing it below --output-dir.",
+    )
     parser.add_argument("--embedding-model", default=DEFAULT_EMBEDDING_MODEL)
     parser.add_argument("--embedding-prompt", default=DEFAULT_EMBEDDING_PROMPT)
     parser.add_argument(
@@ -58,8 +65,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-chunk-words", type=int, default=450)
     parser.add_argument("--max-chunk-words", type=int, default=1800)
     parser.add_argument("--boundary-threshold", type=float, default=0.85)
+    parser.add_argument(
+        "--clusterer",
+        choices=("kmeans", "hdbscan"),
+        default="hdbscan",
+        help="HDBSCAN discovers dense topics without forcing every chunk into one.",
+    )
+    parser.add_argument(
+        "--n-topics",
+        type=int,
+        default=80,
+        help="Number of discovered groups when --clusterer=kmeans.",
+    )
     parser.add_argument("--min-cluster-size", type=int, default=None)
+    parser.add_argument("--min-samples", type=int, default=5)
+    parser.add_argument("--umap-neighbors", type=int, default=15)
+    parser.add_argument("--umap-components", type=int, default=5)
     parser.add_argument("--min-df", type=int, default=3)
+    parser.add_argument(
+        "--llm-label-model",
+        default=None,
+        help="Optional OpenAI model for BERTopic's c-TF-IDF-based topic labels.",
+    )
+    parser.add_argument("--llm-document-tokens", type=int, default=120)
+    parser.add_argument("--llm-delay-seconds", type=float, default=0.25)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--force-embeddings", action="store_true")
     parser.add_argument(
@@ -85,24 +114,40 @@ def main() -> None:
         raise ValueError(f"No complete transcripts found in {args.transcripts_dir}")
 
     unit_rows = [unit.to_dict() for transcript in transcripts for unit in transcript.units]
-    encoder = EmbeddingEncoder(
-        model_name=args.embedding_model,
-        model_cache_dir=args.model_cache_dir,
-        device=args.device,
-        batch_size=args.batch_size,
-        prompt_name=args.embedding_prompt or None,
-        backend=args.embedding_backend,
-        max_length=args.embedding_max_tokens,
-        mlx_cache_limit_mb=args.mlx_cache_limit_mb,
-    )
-    unit_embeddings = encoder.encode_cached(
+    embedding_cache_dir = args.embedding_cache_dir or args.output_dir / "embedding_cache"
+    cached_units, cached_unit_embeddings = load_matching_cached_embeddings(
         unit_rows,
         id_key="unit_id",
-        text_key="text",
-        cache_root=args.output_dir / "embedding_cache",
+        cache_root=embedding_cache_dir,
         cache_name="units",
-        force=args.force_embeddings,
+        backend=args.embedding_backend,
+        model_name=args.embedding_model,
+        prompt_name=args.embedding_prompt or None,
+        max_length=args.embedding_max_tokens,
     )
+    encoder: EmbeddingEncoder | None = None
+    if not args.force_embeddings and len(cached_units) == len(unit_rows):
+        unit_embeddings = cached_unit_embeddings
+        logging.info("Reused all %d cached unit embeddings", len(unit_rows))
+    else:
+        encoder = EmbeddingEncoder(
+            model_name=args.embedding_model,
+            model_cache_dir=args.model_cache_dir,
+            device=args.device,
+            batch_size=args.batch_size,
+            prompt_name=args.embedding_prompt or None,
+            backend=args.embedding_backend,
+            max_length=args.embedding_max_tokens,
+            mlx_cache_limit_mb=args.mlx_cache_limit_mb,
+        )
+        unit_embeddings = encoder.encode_cached(
+            unit_rows,
+            id_key="unit_id",
+            text_key="text",
+            cache_root=embedding_cache_dir,
+            cache_name="units",
+            force=args.force_embeddings,
+        )
 
     chunks: list[dict] = []
     chunk_embeddings: list = []
@@ -160,23 +205,47 @@ def main() -> None:
         return
 
     if args.chunk_embedding_strategy == "direct":
+        if encoder is None:
+            encoder = EmbeddingEncoder(
+                model_name=args.embedding_model,
+                model_cache_dir=args.model_cache_dir,
+                device=args.device,
+                batch_size=args.batch_size,
+                prompt_name=args.embedding_prompt or None,
+                backend=args.embedding_backend,
+                max_length=args.embedding_max_tokens,
+                mlx_cache_limit_mb=args.mlx_cache_limit_mb,
+            )
         chunk_embeddings = encoder.encode_cached(
             chunks,
             id_key="chunk_id",
             text_key="text",
-            cache_root=args.output_dir / "embedding_cache",
+            cache_root=embedding_cache_dir,
             cache_name="chunks",
             force=args.force_embeddings,
             batch_size=args.chunk_batch_size,
         )
     else:
         chunk_embeddings = np.asarray(chunk_embeddings, dtype=np.float32)
+    np.save(args.output_dir / "chunk_embeddings.npy", chunk_embeddings.astype(np.float16))
+    (args.output_dir / "chunk_embedding_ids.txt").write_text(
+        "\n".join(str(chunk["chunk_id"]) for chunk in chunks) + "\n",
+        encoding="utf-8",
+    )
     model, topic_ids, probabilities = fit_topics(
         chunks,
         chunk_embeddings,
         random_state=args.random_state,
+        clusterer=args.clusterer,
+        n_topics=args.n_topics,
         min_cluster_size=args.min_cluster_size,
+        min_samples=args.min_samples,
+        umap_neighbors=args.umap_neighbors,
+        umap_components=args.umap_components,
         min_df=args.min_df,
+        llm_label_model=args.llm_label_model,
+        llm_document_tokens=args.llm_document_tokens,
+        llm_delay_seconds=args.llm_delay_seconds,
     )
     write_topic_outputs(
         output_dir=args.output_dir,

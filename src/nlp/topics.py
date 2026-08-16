@@ -11,10 +11,79 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from src.nlp.frontend import related_episode_rows, write_topic_frontend_json
+
 
 DOMAIN_STOPWORDS = {
+    # Spoken-language scaffolding that dominates personal narratives without
+    # distinguishing their subject. This only affects c-TF-IDF labels; the
+    # embedding input remains untouched.
+    "absolut",
+    "alltså",
+    "alltid",
+    "bara",
+    "börja",
+    "började",
+    "börjar",
+    "dag",
+    "egentligen",
+    "faktiskt",
+    "fick",
+    "först",
+    "förstås",
+    "gång",
+    "ganska",
+    "gick",
+    "gör",
+    "göra",
+    "hela",
+    "helt",
+    "idag",
+    "ibland",
+    "kanske",
+    "känner",
+    "kom",
+    "kommer",
+    "liksom",
+    "länge",
+    "många",
+    "måste",
+    "nog",
+    "precis",
+    "redan",
+    "riktigt",
+    "saker",
+    "satt",
+    "sedan",
+    "sen",
+    "ser",
+    "sist",
+    "sitter",
+    "själv",
+    "slags",
+    "säger",
+    "sätt",
+    "tid",
+    "tillbaka",
+    "tog",
+    "tror",
+    "tycker",
+    "tänker",
+    "tänkte",
+    "verkligen",
+    "vet",
+    "ville",
+    "väldigt",
+    "år",
+    "ändå",
+    # Programme framing and recurrent transitions.
     "program",
     "programmet",
+    "producent",
+    "sommari",
+    "sommarprogram",
+    "app",
+    "play",
     "radio",
     "sveriges",
     "sommar",
@@ -33,6 +102,94 @@ DOMAIN_STOPWORDS = {
     "p1",
 }
 
+# Some old episode copies contain app/player and archival framing instead of
+# programme content. HDBSCAN groups these very reliably, so flag such clusters
+# rather than displaying them as an invented subject in the frontend.
+ARCHIVE_BOILERPLATE_TERMS = {
+    "sr",
+    "sverigesradio",
+    "podd",
+    "lista",
+    "tekniker",
+    "hemsidan",
+    "radioprogram",
+}
+
+
+def _is_low_quality_topic(
+    weighted_terms: Sequence[tuple[str, float]],
+    representative_documents: Sequence[str],
+) -> bool:
+    terms = {
+        word.lower()
+        for term, _ in weighted_terms[:8]
+        for word in term.replace("_", " ").split()
+    }
+    # A single generic word such as "podd" is not enough. The archival
+    # clusters consistently contain several of these terms, unlike real
+    # programme subjects.
+    if len(terms & ARCHIVE_BOILERPLATE_TERMS) >= 3:
+        return True
+    return False
+
+
+def build_openai_representation(
+    *,
+    model: str,
+    document_tokens: int = 120,
+    delay_seconds: float = 0.25,
+) -> dict[str, Any]:
+    """Create BERTopic's documented c-TF-IDF-to-OpenAI representation step."""
+    import os
+
+    import tiktoken
+    from bertopic.representation import OpenAI as OpenAIRepresentation
+    from dotenv import load_dotenv
+    from openai import OpenAI
+
+    load_dotenv(Path(".env"))
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is required for --llm-label-model.")
+    # GPT-5 family models use the o200k vocabulary. Passing the tokenizer lets
+    # BERTopic truncate each c-TF-IDF-selected document by actual token count.
+    tokenizer = tiktoken.get_encoding("o200k_base")
+    prompt = """Jag granskar ett automatiskt textkluster från svenska radioprogram.
+
+Representativa utdrag:
+[DOCUMENTS]
+
+Nyckelord: [KEYWORDS]
+
+Ge en kort svensk etikett på 2–6 ord. Hitta inte på detaljer. Använd inte ord
+som "radioprat", "Sommarprat" eller "Vinterprat" för vanliga innehållsämnen:
+de beskriver mediet och inte ämnet. Om underlaget mest är sångtext,
+programframing eller trasig transkription, namnge i stället det mönstret
+ärligt. Svara enbart i exakt detta format:
+topic: <etikett>
+"""
+    llm_representation = OpenAIRepresentation(
+        OpenAI(),
+        model=model,
+        prompt=prompt,
+        system_prompt="Du är en noggrann svensk redaktör som namnger textkluster.",
+        generator_kwargs={
+            "reasoning_effort": "none",
+            "temperature": 0,
+            "max_completion_tokens": 32,
+        },
+        delay_in_seconds=delay_seconds,
+        nr_docs=4,
+        diversity=0.1,
+        doc_length=document_tokens,
+        tokenizer=tokenizer,
+    )
+    # BERTopic's generic OpenAI wrapper defaults to ``stop="\n"``. GPT-5.6
+    # rejects the legacy stop parameter, and our explicit ``topic:`` format
+    # already makes a stop sequence unnecessary.
+    llm_representation.generator_kwargs.pop("stop", None)
+    # Preserve raw c-TF-IDF keywords as an aspect alongside the generated label.
+    return {"Main": llm_representation, "c-TF-IDF": None}
+
 
 def write_parquet_rows(rows: Sequence[dict[str, Any]], path: Path) -> Path:
     """Write inferred Arrow rows with Zstandard compression."""
@@ -47,26 +204,51 @@ def fit_topics(
     embeddings: np.ndarray,
     *,
     random_state: int = 42,
+    clusterer: str = "kmeans",
+    n_topics: int = 80,
     min_cluster_size: int | None = None,
+    min_samples: int = 5,
+    umap_neighbors: int = 15,
+    umap_components: int = 5,
     min_df: int = 3,
+    llm_label_model: str | None = None,
+    llm_document_tokens: int = 120,
+    llm_delay_seconds: float = 0.25,
 ) -> tuple[Any, np.ndarray, np.ndarray]:
-    """Fit a reproducible BERTopic model over timestamped chunks."""
+    """Fit a reproducible BERTopic model over timestamped chunks.
+
+    HDBSCAN is the discovery default: it finds dense semantic groups and keeps
+    ambiguous chunks as outliers. K-means remains available for controlled,
+    fixed-vocabulary experiments after the corpus has been reviewed.
+    """
     from bertopic import BERTopic
+    from bertopic.dimensionality import BaseDimensionalityReduction
+    from bertopic.vectorizers import ClassTfidfTransformer
     from hdbscan import HDBSCAN
+    from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import CountVectorizer
     from stopwordsiso import stopwords
     from umap import UMAP
 
+    representation_model: Any = (
+        build_openai_representation(
+            model=llm_label_model,
+            document_tokens=llm_document_tokens,
+            delay_seconds=llm_delay_seconds,
+        )
+        if llm_label_model
+        else None
+    )
+
     documents = [str(chunk["text"]) for chunk in chunks]
     if len(documents) < 10:
         raise ValueError("At least 10 chunks are required to fit a topic model.")
-    cluster_size = min_cluster_size or max(12, min(80, round(len(documents) * 0.006)))
-    neighbours = min(15, len(documents) - 1)
-    logging.info(
-        "Fitting BERTopic to %d chunks (min_cluster_size=%d)",
-        len(documents),
-        cluster_size,
-    )
+    if clusterer not in {"kmeans", "hdbscan"}:
+        raise ValueError(f"Unsupported clusterer: {clusterer}")
+    if clusterer == "kmeans" and not 2 <= n_topics <= len(documents):
+        raise ValueError(f"n_topics must be between 2 and {len(documents)}")
+
+    cluster_size = min_cluster_size or 15
 
     vectorizer = CountVectorizer(
         stop_words=sorted(set(stopwords("sv")) | DOMAIN_STOPWORDS),
@@ -75,32 +257,60 @@ def fit_topics(
         min_df=1 if len(documents) < 100 else min_df,
         ngram_range=(1, 2),
     )
-    umap_model = UMAP(
-        n_neighbors=neighbours,
-        n_components=5,
-        min_dist=0.0,
-        metric="cosine",
-        random_state=random_state,
-        low_memory=True,
-    )
-    hdbscan_model = HDBSCAN(
-        min_cluster_size=cluster_size,
-        min_samples=max(5, cluster_size // 3),
-        metric="euclidean",
-        cluster_selection_method="eom",
-        prediction_data=True,
-    )
+    if clusterer == "kmeans":
+        # Unit-normalised embeddings make Euclidean K-means equivalent to
+        # spherical/cosine K-means for assigning points to centroids. Keep the
+        # original space: UMAP is useful for display, but distorts clusters.
+        logging.info("Fitting BERTopic to %d chunks (spherical K-means, k=%d)", len(documents), n_topics)
+        umap_model: Any = BaseDimensionalityReduction()
+        cluster_model: Any = KMeans(
+            n_clusters=n_topics,
+            init="k-means++",
+            n_init=10,
+            random_state=random_state,
+        )
+    else:
+        neighbours = min(umap_neighbors, len(documents) - 1)
+        logging.info(
+            "Fitting BERTopic to %d chunks (HDBSCAN min_cluster_size=%d)",
+            len(documents),
+            cluster_size,
+        )
+        umap_model = UMAP(
+            n_neighbors=neighbours,
+            n_components=umap_components,
+            min_dist=0.0,
+            metric="cosine",
+            random_state=random_state,
+            low_memory=True,
+        )
+        cluster_model = HDBSCAN(
+            min_cluster_size=cluster_size,
+            min_samples=min_samples,
+            metric="euclidean",
+            cluster_selection_method="eom",
+            prediction_data=True,
+        )
     model = BERTopic(
         language="multilingual",
         embedding_model=None,
         umap_model=umap_model,
-        hdbscan_model=hdbscan_model,
+        hdbscan_model=cluster_model,
         vectorizer_model=vectorizer,
+        ctfidf_model=ClassTfidfTransformer(
+            bm25_weighting=True,
+            reduce_frequent_words=True,
+        ),
+        representation_model=representation_model,
         top_n_words=12,
         calculate_probabilities=False,
         verbose=True,
     )
     topic_ids, probabilities = model.fit_transform(documents, embeddings)
+    if probabilities is None:
+        # K-means has no density-based membership probability. Every assigned
+        # chunk is retained; callers can use its topic share within an episode.
+        probabilities = np.ones(len(topic_ids), dtype=np.float32)
     return (
         model,
         np.asarray(topic_ids, dtype=np.int32),
@@ -123,18 +333,31 @@ def _topic_rows(
     }
     rows: list[dict[str, Any]] = []
     for topic_id, info in sorted(information.items()):
-        weighted_terms = model.get_topic(topic_id) or []
+        raw_topics = model.topic_aspects_.get("c-TF-IDF", {})
+        weighted_terms = raw_topics.get(topic_id) or model.get_topic(topic_id) or []
+        primary_representation = model.get_topic(topic_id) or []
+        llm_label = (
+            str(primary_representation[0][0])
+            if raw_topics and primary_representation
+            else None
+        )
         representative_documents = model.get_representative_docs(topic_id) or []
         rows.append(
             {
                 "topic_id": topic_id,
-                "label": info.get("Name"),
+                "label": llm_label or info.get("Name"),
+                "cluster_label": info.get("Name"),
+                "llm_label": llm_label,
                 "chunk_count": int(info.get("Count", 0)),
                 "episode_count": len(episodes_by_topic[topic_id]),
                 "keywords": [term for term, _ in weighted_terms],
                 "keyword_scores": [float(score) for _, score in weighted_terms],
                 "representative_excerpts": [str(text)[:600] for text in representative_documents[:3]],
                 "is_outlier": topic_id == -1,
+                "is_low_quality": topic_id != -1 and _is_low_quality_topic(
+                    weighted_terms,
+                    representative_documents,
+                ),
             }
         )
     return rows
@@ -221,7 +444,10 @@ def _episode_map_rows(
         topic_counts: dict[int, int] = defaultdict(int)
         for chunk_index in indices:
             topic_counts[int(topic_ids[chunk_index])] += int(chunks[chunk_index]["word_count"])
-        dominant_topic = max(topic_counts, key=topic_counts.get)
+        content_topic_counts = {
+            topic_id: count for topic_id, count in topic_counts.items() if topic_id != -1
+        }
+        dominant_topic = max(content_topic_counts or topic_counts, key=(content_topic_counts or topic_counts).get)
         rows.append(
             {
                 "sr_episode_id": episode_id,
@@ -264,11 +490,24 @@ def write_topic_outputs(
         topic_ids,
         random_state=random_state,
     )
+    related_episodes = related_episode_rows(
+        episode_embeddings,
+        episode_ids,
+        top_k=8,
+    )
 
     write_parquet_rows(chunk_rows, output_dir / "chunk_topics.parquet")
     write_parquet_rows(topics, output_dir / "topics.parquet")
     write_parquet_rows(episode_topics, output_dir / "episode_topics.parquet")
     write_parquet_rows(episode_map, output_dir / "episode_map.parquet")
+    write_parquet_rows(related_episodes, output_dir / "related_episodes.parquet")
+    write_topic_frontend_json(
+        topics,
+        episode_topics,
+        episode_map,
+        related_episodes,
+        output_dir / "topics.json",
+    )
     np.save(output_dir / "episode_embeddings.npy", episode_embeddings.astype(np.float16))
     (output_dir / "episode_embedding_ids.txt").write_text(
         "\n".join(str(episode_id) for episode_id in episode_ids) + "\n",

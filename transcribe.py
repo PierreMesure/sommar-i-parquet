@@ -10,6 +10,11 @@ from typing import Any
 import pyarrow.parquet as pq
 
 from src.whisper.download import download_file, download_huggingface_model
+from src.whisper.quality import (
+    quarantine_transcript,
+    strip_artifacts,
+    transcript_artifacts,
+)
 from src.whisper.transcribe import transcribe_audio_whispermlx
 
 
@@ -80,9 +85,27 @@ def main() -> None:
     )
     import json
 
+    artifacts = transcript_artifacts(transcript)
+    faulty_dir = transcript_path.parent / "faulty"
+    retrying = faulty_dir.exists() and any(
+        faulty_dir.glob(f"{args.episode_id}-*.json")
+    )
+    if artifacts:
+        transcript["sommar_i_parquet"]["artifacts"] = artifacts
+        if retrying:
+            strip_artifacts(transcript, artifacts)
+
     with transcript_path.open("w", encoding="utf-8") as output:
         json.dump(transcript, output, ensure_ascii=False, indent=2)
         output.write("\n")
+    if artifacts and not retrying:
+        faulty_path = quarantine_transcript(transcript_path, artifacts)
+        logging.warning("Archived faulty transcript at %s", faulty_path)
+        return
+    if artifacts:
+        logging.warning(
+            "Retried transcript still contained artifacts; removed and retained them in metadata"
+        )
     logging.info("Wrote timestamped transcript: %s", transcript_path)
 
 

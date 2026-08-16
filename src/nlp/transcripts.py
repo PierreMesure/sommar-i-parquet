@@ -12,6 +12,12 @@ from typing import Any
 
 import pyarrow.parquet as pq
 
+from src.whisper.quality import (
+    strip_artifacts,
+    strip_boilerplate,
+    transcript_artifacts,
+)
+
 
 WHITESPACE = re.compile(r"\s+")
 
@@ -153,8 +159,8 @@ def load_transcripts(
 ) -> list[EpisodeTranscript]:
     """Load a stable snapshot of complete transcript JSON files."""
     paths = sorted(
-        transcripts_dir.glob("*.json"),
-        key=lambda path: (0, int(path.stem)) if path.stem.isdigit() else (1, path.stem),
+        (path for path in transcripts_dir.glob("*.json") if path.stem.isdigit()),
+        key=lambda path: int(path.stem),
     )
     if limit is not None:
         paths = paths[:limit]
@@ -172,6 +178,16 @@ def load_transcripts(
         except ValueError:
             logging.warning("Skipping transcript with no numeric episode ID: %s", path)
             continue
+        removed_boilerplate = strip_boilerplate(payload)
+        artifacts = transcript_artifacts(payload)
+        removed_artifacts = strip_artifacts(payload, artifacts)
+        if removed_boilerplate or removed_artifacts:
+            logging.debug(
+                "Excluded %d boilerplate and %d artifact segments from %s",
+                len(removed_boilerplate),
+                len(removed_artifacts),
+                path,
+            )
         units = build_units(
             episode_id=episode_id,
             segments=list(payload.get("segments") or []),

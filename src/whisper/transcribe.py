@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.whisper.quality import strip_boilerplate, strip_recommended_episode_extract
+
 
 class WhisperMLXSession:
     """Reusable WhisperMLX pipeline; load the q4 model only once."""
@@ -39,6 +41,8 @@ class WhisperMLXSession:
                 transcript["segments"], self._alignment_model,
                 self._alignment_metadata, str(audio_path), device="cpu"
             )
+        strip_recommended_episode_extract(transcript)
+        strip_boilerplate(transcript)
         return transcript
 
 
@@ -52,7 +56,7 @@ def transcribe_audio_whispermlx(*, audio_path: Path, output_path: Path,
         force_align_words=force_align_words, language=language,
     )
     transcript = session.transcribe(audio_path)
-    transcript["sommar_i_parquet"] = {
+    transcript.setdefault("sommar_i_parquet", {}).update({
         "audio_path": str(audio_path),
         "created_at": datetime.now(UTC).isoformat(),
         "engine": "whispermlx (MLX ASR + Silero VAD + wav2vec2 alignment)"
@@ -60,7 +64,7 @@ def transcribe_audio_whispermlx(*, audio_path: Path, output_path: Path,
         "model_path": str(model_path),
         "alignment_model_dir": str(alignment_model_dir),
         "force_align_words": force_align_words,
-    }
+    })
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as output:
         json.dump(transcript, output, ensure_ascii=False, indent=2)
