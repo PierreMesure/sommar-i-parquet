@@ -6,7 +6,11 @@ import argparse
 import logging
 from pathlib import Path
 
-from src.sr.download import download_episodes, download_music_playlists
+from src.sr.download import (
+    download_episode_portraits,
+    download_episodes,
+    download_music_playlists,
+)
 from src.sr.parse import (
     episode_metadata,
     parse_episodes,
@@ -126,6 +130,7 @@ def main() -> None:
         page_size=args.page_size,
         max_pages=args.max_pages,
     )
+    download_episode_portraits(raw_episodes)
     episodes = parse_episodes(
         raw_episodes,
         include_specials=args.include_specials,

@@ -15,6 +15,12 @@ EPISODES_URL = "https://api.sr.se/api/v2/episodes/index"
 MUSIC_URL = "https://api.sr.se/api/v2/playlists/getplaylistbyepisodeid"
 PROGRAM_ID = 2071
 USER_AGENT = "sommarpratkompassen/0.1"
+PLAYER_URL = "https://web-api.sr.se/v1/player/ondemand"
+EXCLUDED_IMAGE_URLS = frozenset(
+    {
+        "https://static-cdn.sr.se/images/2071/26c851eb-70be-4004-b06d-a7bcc792c959.jpg",
+    }
+)
 
 
 def download_episodes(
@@ -70,6 +76,39 @@ def download_episodes(
                 break
             page += 1
 
+    return episodes
+
+
+def download_episode_portraits(episodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Replace known generic episode images with player-API portraits."""
+    selected = [
+        episode
+        for episode in episodes
+        if (episode.get("imageurltemplate") or episode.get("imageurl"))
+        in EXCLUDED_IMAGE_URLS
+    ]
+    if not selected:
+        return episodes
+
+    transport = httpx.HTTPTransport(retries=3)
+    with httpx.Client(
+        transport=transport,
+        timeout=30.0,
+        headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+        follow_redirects=True,
+    ) as client:
+        for episode in selected:
+            response = client.get(
+                PLAYER_URL,
+                params={"id": int(episode["id"]), "type": "episode"},
+            )
+            response.raise_for_status()
+            image_url = response.json().get("item", {}).get("imageSrc")
+            if image_url:
+                episode["imageurltemplate"] = image_url
+                episode["imageurl"] = image_url
+
+    logging.info("Downloaded portrait URLs for %d episodes", len(selected))
     return episodes
 
 
