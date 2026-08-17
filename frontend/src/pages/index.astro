@@ -1,13 +1,9 @@
 ---
 const title = "Sommarpratkompassen";
-const episodesUrl = import.meta.env.DEV
-  ? "/episodes.json"
-  : "https://raw.githubusercontent.com/PierreMesure/sommarpratkompassen/refs/heads/main/data/episodes.json";
-const topicsUrl = import.meta.env.DEV
-  ? "/topics.json"
-  : "https://raw.githubusercontent.com/PierreMesure/sommarpratkompassen/refs/heads/main/data/nlp/topics.json";
 const base = import.meta.env.BASE_URL;
 const assetBase = base.endsWith("/") ? base : `${base}/`;
+const episodesUrl = `${assetBase}episodes.json`;
+const topicsUrl = `${assetBase}topics.json`;
 const description = "Utforska över 60 år av Sommar i P1 och hitta ditt nya favorit sommarprat!";
 const socialImage = "https://sommarprat.mesu.re/og-image.png";
 ---

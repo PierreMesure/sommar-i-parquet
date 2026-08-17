@@ -7,6 +7,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "sync-data": "node -e \"import('node:fs').then(fs => { if(fs.existsSync('../data/episodes.json')) fs.copyFileSync('../data/episodes.json', 'public/episodes.json'); if(fs.existsSync('../data/nlp/topics.json')) fs.copyFileSync('../data/nlp/topics.json', 'public/topics.json'); })\"",
+    "prebuild": "npm run sync-data",
+    "predev": "npm run sync-data",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview"
